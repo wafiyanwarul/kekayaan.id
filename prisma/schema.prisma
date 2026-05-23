@@ -1,0 +1,107 @@
+// This is your Prisma schema file
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  createdAt DateTime @default(now()) @map("created_at")
+
+  assets       Asset[]
+  goals        Goal[]
+  transactions Transaction[]
+  categories   TransactionCategory[]
+  monthlyCycle MonthlyCycle?
+
+  @@map("users")
+}
+
+model Asset {
+  id           String   @id @default(uuid())
+  userId       String   @map("user_id")
+  name         String
+  category     String
+  currentValue Decimal  @map("current_value") @db.Decimal(18, 2)
+  isLiquid     Boolean  @default(true) @map("is_liquid")
+  notes        String?
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  user      User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  snapshots AssetSnapshot[]
+
+  @@map("assets")
+}
+
+model AssetSnapshot {
+  id           String   @id @default(uuid())
+  assetId      String   @map("asset_id")
+  value        Decimal  @db.Decimal(18, 2)
+  snapshotDate DateTime @map("snapshot_date") @db.Date
+
+  asset Asset @relation(fields: [assetId], references: [id], onDelete: Cascade)
+
+  @@unique([assetId, snapshotDate])
+  @@map("asset_snapshots")
+}
+
+model Goal {
+  id           String   @id @default(uuid())
+  userId       String   @map("user_id")
+  title        String
+  targetAmount Decimal  @map("target_amount") @db.Decimal(18, 2)
+  targetDate   DateTime @map("target_date") @db.Date
+  goalType     String   @map("goal_type")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("goals")
+}
+
+model TransactionCategory {
+  id     String @id @default(uuid())
+  userId String @map("user_id")
+  name   String
+  type   String // 'income' | 'expense'
+
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions Transaction[]
+
+  @@map("transaction_categories")
+}
+
+model Transaction {
+  id              String   @id @default(uuid())
+  userId          String   @map("user_id")
+  title           String
+  amount          Decimal  @db.Decimal(18, 2)
+  type            String   // 'income' | 'expense'
+  categoryId      String?  @map("category_id")
+  transactionDate DateTime @map("transaction_date") @db.Date
+  notes           String?
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  user     User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category TransactionCategory? @relation(fields: [categoryId], references: [id])
+
+  @@map("transactions")
+}
+
+model MonthlyCycle {
+  id       String @id @default(uuid())
+  userId   String @unique @map("user_id")
+  startDay Int    @default(25) @map("start_day")
+  endDay   Int    @default(24) @map("end_day")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("monthly_cycles")
+}
