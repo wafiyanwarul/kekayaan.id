@@ -2,7 +2,7 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
-import { LayoutDashboard, Wallet, Target, Receipt, Settings } from "lucide-react"
+import { Gem, LayoutDashboard, Receipt, Settings, Sparkles, Target, Wallet } from "lucide-react"
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -17,7 +17,18 @@ export function SidebarNav() {
   return (
     <aside className="hidden md:flex flex-col w-60 border-r bg-card h-full">
       <div className="px-6 py-5 border-b">
-        <span className="text-lg font-bold text-primary">kekayaan.id</span>
+        <Link href="/dashboard" className="flex items-center gap-3">
+          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/15 text-primary ring-1 ring-primary/20">
+            <Gem className="h-5 w-5" />
+          </span>
+          <span className="leading-tight">
+            <span className="block text-lg font-bold text-primary">kekayaan.id</span>
+            <span className="flex items-center gap-1 text-[11px] font-medium text-muted-foreground">
+              <Sparkles className="h-3 w-3" />
+              wealth cockpit
+            </span>
+          </span>
+        </Link>
       </div>
       <nav className="flex-1 p-4 space-y-1">
         {navItems.map(({ href, label, icon: Icon }) => (
