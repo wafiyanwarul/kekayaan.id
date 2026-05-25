@@ -1,19 +1,21 @@
 "use client"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
+import { useAppPreferences } from "@/components/providers/AppPreferencesProvider"
 import { cn } from "@/lib/utils"
 import { Gem, LayoutDashboard, Receipt, Settings, Sparkles, Target, Wallet } from "lucide-react"
 
 const navItems = [
-  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/assets", label: "Aset", icon: Wallet },
-  { href: "/goals", label: "Goals", icon: Target },
-  { href: "/finance", label: "Keuangan", icon: Receipt },
-  { href: "/settings", label: "Pengaturan", icon: Settings },
-]
+  { href: "/dashboard", labelKey: "nav.dashboard", icon: LayoutDashboard },
+  { href: "/assets", labelKey: "nav.assets", icon: Wallet },
+  { href: "/goals", labelKey: "nav.goals", icon: Target },
+  { href: "/finance", labelKey: "nav.finance", icon: Receipt },
+  { href: "/settings", labelKey: "nav.settings", icon: Settings },
+] as const
 
 export function SidebarNav() {
   const pathname = usePathname()
+  const { t } = useAppPreferences()
   return (
     <aside className="hidden md:flex flex-col w-60 border-r bg-card h-full">
       <div className="px-6 py-5 border-b">
@@ -25,13 +27,13 @@ export function SidebarNav() {
             <span className="block text-lg font-bold text-primary">kekayaan.id</span>
             <span className="flex items-center gap-1 text-[11px] font-medium text-muted-foreground">
               <Sparkles className="h-3 w-3" />
-              wealth cockpit
+              {t("app.tagline")}
             </span>
           </span>
         </Link>
       </div>
       <nav className="flex-1 p-4 space-y-1">
-        {navItems.map(({ href, label, icon: Icon }) => (
+        {navItems.map(({ href, labelKey, icon: Icon }) => (
           <Link
             key={href}
             href={href}
@@ -43,7 +45,7 @@ export function SidebarNav() {
             )}
           >
             <Icon className="w-4 h-4" />
-            {label}
+            {t(labelKey)}
           </Link>
         ))}
       </nav>

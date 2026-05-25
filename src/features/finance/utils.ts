@@ -61,3 +61,33 @@ export function sortTransactions(transactions: FinanceTransaction[]) {
     return b.created_at.localeCompare(a.created_at)
   })
 }
+
+/** Returns all unique billing cycles that appear in `transactions` plus the
+ *  current active cycle, sorted newest → oldest. Index 0 is always current. */
+export function getAvailableCycles(
+  transactions: FinanceTransaction[],
+  cycle: FinanceCycle,
+  now = new Date()
+): Array<{ end: Date; label: string; start: Date }> {
+  const currentCycle = getCycleRange(now, cycle)
+  const seen = new Set<string>()
+  const cycles: Array<{ end: Date; label: string; start: Date }> = []
+
+  // Always include the current active cycle first
+  const currentKey = currentCycle.start.toISOString()
+  seen.add(currentKey)
+  cycles.push({ ...currentCycle, label: formatCycleLabel(currentCycle.start, currentCycle.end) })
+
+  // Derive cycles from every transaction date
+  transactions.forEach((tx) => {
+    const range = getCycleRange(parseDate(tx.transaction_date), cycle)
+    const key = range.start.toISOString()
+    if (!seen.has(key)) {
+      seen.add(key)
+      cycles.push({ ...range, label: formatCycleLabel(range.start, range.end) })
+    }
+  })
+
+  // Sort newest → oldest
+  return cycles.sort((a, b) => b.start.getTime() - a.start.getTime())
+}

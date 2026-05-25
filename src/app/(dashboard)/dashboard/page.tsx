@@ -1,6 +1,7 @@
 import { format } from "date-fns"
 import { id } from "date-fns/locale"
-import { Banknote, CircleDollarSign, Droplets, Gauge, WalletCards } from "lucide-react"
+import { Banknote, Droplets, Gauge, WalletCards } from "lucide-react"
+import { DashboardWelcome } from "@/components/dashboard/DashboardWelcome"
 import { StatCard } from "@/components/shared/StatCard"
 import { WealthAllocationChart } from "@/features/assets/components/WealthAllocationChart"
 import { MonthlyFinanceCard } from "@/features/finance/components/MonthlyFinanceCard"
@@ -15,7 +16,6 @@ export default async function DashboardPage() {
   } = await supabase.auth.getUser()
 
   const userId = user?.id ?? ""
-  const displayName = getDisplayName(user?.email)
 
   const [{ data: assets }, { data: cycle }] = await Promise.all([
     supabase
@@ -68,20 +68,7 @@ export default async function DashboardPage() {
 
   return (
     <div className="space-y-6">
-      <section className="rounded-xl border bg-card p-5">
-        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Welcome back</p>
-            <h2 className="mt-1 text-2xl font-bold text-white">Hi, {displayName}</h2>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Your wealth cockpit is synced with the latest asset and finance data.
-            </p>
-          </div>
-          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/15 text-primary ring-1 ring-primary/20">
-            <CircleDollarSign className="h-7 w-7" />
-          </div>
-        </div>
-      </section>
+      <DashboardWelcome email={user?.email} />
 
       {/* Wealth Summary */}
       <section>
@@ -137,10 +124,4 @@ export default async function DashboardPage() {
       </section>
     </div>
   )
-}
-
-function getDisplayName(email?: string | null) {
-  if (!email) return "there"
-
-  return email.split("@")[0]
 }

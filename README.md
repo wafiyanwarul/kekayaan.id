@@ -1,152 +1,147 @@
-# kekayaan.id
+# kekayaan.id — Personal Wealth Cockpit
 
-<p align="center">
-  <strong>Personal Wealth Cockpit for assets, cash flow, and long-term financial clarity.</strong>
-</p>
-
-<p align="center">
-  <img alt="Next.js" src="https://img.shields.io/badge/Next.js-16.2-black?style=for-the-badge&logo=nextdotjs" />
-  <img alt="React" src="https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react&logoColor=111827" />
-  <img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-5-3178C6?style=for-the-badge&logo=typescript&logoColor=white" />
-  <img alt="Supabase" src="https://img.shields.io/badge/Supabase-Auth%20%2B%20Postgres-3FCF8E?style=for-the-badge&logo=supabase&logoColor=111827" />
-  <img alt="Tailwind CSS" src="https://img.shields.io/badge/Tailwind_CSS-4-38BDF8?style=for-the-badge&logo=tailwindcss&logoColor=111827" />
-</p>
+> Aplikasi manajemen keuangan pribadi berbasis Next.js dengan siklus billing 25–24 dan laporan PDF otomatis.
 
 ---
 
-## Overview
+## ✨ Fitur Utama
 
-`kekayaan.id` is a modern personal finance dashboard built to help track wealth allocation, liquid and non-liquid assets, monthly cash flow, and future financial goals.
+| Fitur | Deskripsi |
+|---|---|
+| **Dashboard Keuangan** | Ringkasan aset, tujuan, dan cashflow dalam satu tampilan |
+| **Expense Tracker** | Pencatatan pemasukan & pengeluaran dengan kategori |
+| **Siklus 25–24** | Timeline billing dari tanggal 25 tiap bulan sampai 24 bulan berikutnya |
+| **Pilih Periode** | Filter siklus berdasarkan bulan & tahun, navigasi antar periode |
+| **Grafik Arus Kas** | Bar chart harian pemasukan vs pengeluaran |
+| **Kategori Pie Chart** | Persentase kategori pemasukan & pengeluaran |
+| **Pengeluaran Harian Pokok** | Rata-rata harian kategori Makanan & Transportasi + proyeksi mingguan/bulanan |
+| **Riwayat Transaksi** | List & group view dengan filter tipe + pencarian |
+| **Export PDF** | Laporan cashflow bulanan bergaya profesional (A4, light theme) dengan satu klik |
+| **Manajemen Aset** | Pencatatan aset dengan valuasi |
+| **Goals / Tujuan Keuangan** | Target tabungan dengan progress tracking |
+| **Pengaturan** | Ubah password, maintenance mode, system upgrade toggle |
+| **Auth** | Login, Register, Lupa Password, Reset Password via Supabase |
 
-The app is designed around a salary-cycle workflow: monthly finance periods can run from the 25th of one month to the 24th of the next month, making it suitable for real-world Indonesian payroll habits.
+---
 
-## Highlights
+## 🛠 Tech Stack
 
-- Authenticated dashboard powered by Supabase Auth.
-- Real-time wealth overview from user-owned asset records.
-- Asset CRUD for liquid and non-liquid wealth tracking.
-- Finance transaction CRUD for daily spending and income.
-- Active monthly cycle summary: income, expense, surplus, and savings rate.
-- Finance filters by item, day, month, and year with expandable summaries.
-- Income and expense category allocation charts.
-- Disabled PDF bank mutation import placeholder for future extraction workflow.
-- Goals and operational settings pages prepared for future development.
-- Maintenance and upgrading toggles as a UI foundation for deployment controls.
+- **Framework**: [Next.js 16](https://nextjs.org/) (App Router)
+- **Auth & Database**: [Supabase](https://supabase.com/)
+- **ORM**: [Prisma](https://www.prisma.io/)
+- **Styling**: [Tailwind CSS v4](https://tailwindcss.com/)
+- **UI Components**: [shadcn/ui](https://ui.shadcn.com/)
+- **Charts**: [Recharts](https://recharts.org/)
+- **PDF Export**: [jsPDF](https://github.com/parallax/jsPDF) + [jspdf-autotable](https://github.com/simonbengtsson/jsPDF-AutoTable)
+- **Forms**: [React Hook Form](https://react-hook-form.com/) + [Zod](https://zod.dev/)
+- **State**: [Zustand](https://zustand-demo.pmnd.rs/)
+- **Icons**: [Lucide React](https://lucide.dev/)
+- **Date Utils**: [date-fns](https://date-fns.org/)
 
-## Tech Stack
+---
 
-| Layer | Tools |
-| --- | --- |
-| Framework | Next.js 16 App Router |
-| UI | React 19, Tailwind CSS 4, Lucide Icons |
-| Charts | Recharts |
-| Auth & Database | Supabase Auth, Postgres, RLS |
-| ORM / DB Tooling | Prisma |
-| Forms & Validation | React Hook Form, Zod |
-| Language | TypeScript |
+## 🚀 Getting Started
 
-## Getting Started
+### Prerequisites
+
+- Node.js 18+
+- npm / pnpm
+- Supabase project
+- PostgreSQL (via Supabase or local)
+
+### Setup
 
 ```bash
+# 1. Clone repository
+git clone https://github.com/wafiyanwarul/kekayaan.id.git
+cd kekayaan.id
+
+# 2. Install dependencies
 npm install
+
+# 3. Copy environment variables
+cp .env.example .env.local
+```
+
+Edit `.env.local`:
+
+```env
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+DATABASE_URL=your_database_connection_string
+```
+
+```bash
+# 4. Generate Prisma client
+npx prisma generate
+
+# 5. Run development server
 npm run dev
 ```
 
-Open the app at:
+Buka [http://localhost:3000](http://localhost:3000).
 
-```txt
-http://localhost:3000
+---
+
+## 📁 Struktur Proyek
+
 ```
-
-## Environment Variables
-
-Create `.env` from `.env.example` and fill in your Supabase credentials.
-
-```bash
-cp .env.example .env
-```
-
-| Variable | Description |
-| --- | --- |
-| `NEXT_PUBLIC_SUPABASE_URL` | Supabase project URL |
-| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Supabase publishable key |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Optional fallback anon key |
-| `DATABASE_URL` | Supabase pooled database connection |
-| `DIRECT_URL` | Supabase direct database connection |
-
-## Database Setup
-
-Run the main migration in Supabase SQL Editor:
-
-```txt
-supabase-migration.sql
-```
-
-If Supabase Auth signup returns `Database error saving new user`, run:
-
-```txt
-supabase-auth-trigger-fix.sql
-```
-
-The trigger fix ensures new users can be created safely while default transaction categories and monthly cycle records are prepared.
-
-## Project Structure
-
-```txt
 src/
-  app/
-    (auth)/             Login and register pages
-    (dashboard)/        Dashboard, assets, finance, goals, settings
-  components/
-    layout/             Sidebar and top bar
-    settings/           Operational settings UI
-    shared/             Reusable UI primitives
-  features/
-    assets/             Asset CRUD and allocation chart
-    finance/            Transactions, grouping, summaries, charts
-  lib/
-    supabase/           Browser/server Supabase clients
-    utils/              Formatting and utility helpers
-  proxy.ts              Next.js 16 Proxy for auth routing
-```
-
-## Available Scripts
-
-| Command | Description |
-| --- | --- |
-| `npm run dev` | Start local development server |
-| `npm run build` | Build production app |
-| `npm run start` | Start production server |
-| `npm run lint` | Run ESLint |
-
-## Current Modules
-
-- **Dashboard**: welcome panel, wealth cards, asset allocation, monthly finance summary.
-- **Assets**: add, edit, delete, and classify liquid/non-liquid assets.
-- **Finance**: add, edit, delete, filter, group, and chart transactions.
-- **Goals**: placeholder page for upcoming goal planning.
-- **Settings**: maintenance and upgrading controls prepared for future deployment integration.
-
-## Roadmap
-
-- Goal creation and progress tracking.
-- Persistent system settings table.
-- Server-side maintenance mode enforcement through Proxy.
-- PDF bank mutation extraction.
-- Transaction preview table before import confirmation.
-- Category management UI.
-- Additional analytics for net worth growth and recurring expenses.
-
-## Notes
-
-This project targets modern Next.js conventions. In Next.js 16, Middleware has been renamed to Proxy, so request-level auth logic lives in:
-
-```txt
-src/proxy.ts
+├── app/
+│   ├── (auth)/          # Login, Register, Forgot/Reset Password
+│   ├── (dashboard)/     # Dashboard, Finance, Assets, Goals, Settings
+│   └── auth/            # Supabase auth callback
+├── components/
+│   ├── providers/       # AppPreferences, Supabase providers
+│   ├── settings/        # SettingsPanel (termasuk Change Password)
+│   └── ui/              # shadcn/ui components
+├── features/
+│   └── finance/
+│       ├── components/  # FinanceClient, PdfExportModal, dll
+│       ├── pdf-export.ts # Generator PDF laporan cashflow
+│       ├── types.ts
+│       └── utils.ts     # Cycle calculation, summarize transactions
+└── lib/
+    ├── supabase/        # Client & Server helpers
+    └── utils.ts
 ```
 
 ---
 
-<p align="center">
-  Built as a focused personal wealth operating system.
-</p>
+## 📄 Laporan PDF
+
+Klik **"Laporan PDF"** di halaman Keuangan → pilih tahun & siklus → **Unduh PDF**.
+
+Isi laporan:
+- Header dengan nama app + periode
+- 4 summary cards (Pemasukan / Pengeluaran / Surplus / Savings Rate)
+- Tabel kategori pemasukan & pengeluaran berdampingan
+- Box pengeluaran harian pokok (Makanan + Transportasi)
+- Tabel detail pemasukan + total footer
+- Tabel detail pengeluaran + total footer
+- Footer halaman dengan nomor halaman
+
+---
+
+## 🔐 Authentication Flow
+
+1. **Register** → konfirmasi email
+2. **Login** → dengan show/hide password & "Ingat saya"
+3. **Lupa Password** → kirim email reset via Supabase
+4. **Reset Password** → klik link email → form password baru
+5. **Ubah Password** → di halaman Pengaturan (re-auth + update)
+
+---
+
+## 📅 Siklus Billing 25–24
+
+Timeline keuangan berjalan dari tanggal **25** suatu bulan sampai **24** bulan berikutnya. Ini memungkinkan:
+- Tracking pengeluaran lebih akurat sesuai siklus gajian
+- Pilih dan bandingkan siklus-siklus lampau
+- Filter berdasarkan tahun untuk navigasi multi-tahun
+
+---
+
+## 📜 Lisensi
+
+Private project — © 2026 kekayaan.id

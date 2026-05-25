@@ -30,14 +30,19 @@ export async function proxy(request: NextRequest) {
   } = await supabase.auth.getUser()
   const { pathname } = request.nextUrl
 
-  const authRoutes = ["/login", "/register", "/forgot-password"]
-  const isAuthRoute = authRoutes.some((route) => pathname.startsWith(route))
+  // Public routes accessible without a session
+  const publicRoutes = ["/login", "/register", "/forgot-password", "/reset-password", "/auth"]
+  const isPublicRoute = publicRoutes.some((route) => pathname.startsWith(route))
 
-  if (!user && !isAuthRoute) {
+  // Auth-only routes (logged-in users should be redirected away)
+  const authOnlyRoutes = ["/login", "/register", "/forgot-password"]
+  const isAuthOnlyRoute = authOnlyRoutes.some((route) => pathname.startsWith(route))
+
+  if (!user && !isPublicRoute) {
     return NextResponse.redirect(new URL("/login", request.url))
   }
 
-  if (user && isAuthRoute) {
+  if (user && isAuthOnlyRoute) {
     return NextResponse.redirect(new URL("/dashboard", request.url))
   }
 

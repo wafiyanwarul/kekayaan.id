@@ -6,6 +6,8 @@ import {
   ArrowUpRight,
   BarChart3,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
   FileText,
   Pencil,
   Percent,
@@ -16,6 +18,7 @@ import {
   WalletCards,
 } from "lucide-react"
 import type { LucideIcon } from "lucide-react"
+import { PdfExportModal } from "./PdfExportModal"
 import {
   Bar,
   BarChart,
@@ -34,6 +37,7 @@ import {
   formatCycleLabel,
   formatDateLabel,
   formatShortDate,
+  getAvailableCycles,
   getCycleRange,
   isInRange,
   parseDate,
@@ -98,19 +102,38 @@ export function FinanceClient({ cycle, initialCategories, initialTransactions, u
   const [pendingDelete, setPendingDelete] = useState<FinanceTransaction | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [expandedKeys, setExpandedKeys] = useState<Set<string>>(new Set())
+  const [selectedCycleIndex, setSelectedCycleIndex] = useState(0)
+  const [showCycleDropdown, setShowCycleDropdown] = useState(false)
+  const [dropdownYear, setDropdownYear] = useState<number>(() => new Date().getFullYear())
 
-  const activeCycle = useMemo(() => getCycleRange(new Date(), cycle), [cycle])
+  const availableCycles = useMemo(() => getAvailableCycles(transactions, cycle), [transactions, cycle])
+  const selectedCycle = availableCycles[selectedCycleIndex] ?? availableCycles[0]
+  const isCurrentCycle = selectedCycleIndex === 0
+
+  // All unique years that have at least one cycle
+  const availableYears = useMemo(() => {
+    const years = new Set(availableCycles.map((c) => c.start.getFullYear()))
+    return [...years].sort((a, b) => b - a)
+  }, [availableCycles])
+
+  // Cycles visible in the dropdown filtered by selected year
+  const dropdownCycles = useMemo(
+    () => availableCycles.filter((c) => c.start.getFullYear() === dropdownYear),
+    [availableCycles, dropdownYear]
+  )
+
   const activeTransactions = useMemo(
-    () => transactions.filter((transaction) => isInRange(transaction.transaction_date, activeCycle.start, activeCycle.end)),
-    [activeCycle.end, activeCycle.start, transactions]
+    () => transactions.filter((transaction) => isInRange(transaction.transaction_date, selectedCycle.start, selectedCycle.end)),
+    [selectedCycle, transactions]
   )
   const activeSummary = useMemo(() => summarizeTransactions(activeTransactions), [activeTransactions])
-  const cycleLabel = formatCycleLabel(activeCycle.start, activeCycle.end)
+  const cycleLabel = selectedCycle?.label ?? ""
 
+  // Riwayat Transaksi — now scoped to the selected cycle
   const visibleTransactions = useMemo(() => {
     const normalizedSearch = search.trim().toLowerCase()
 
-    return transactions.filter((transaction) => {
+    return activeTransactions.filter((transaction) => {
       const matchesType = typeFilter === "all" || transaction.type === typeFilter
       const categoryName = transaction.category?.name ?? ""
       const matchesSearch =
@@ -121,7 +144,25 @@ export function FinanceClient({ cycle, initialCategories, initialTransactions, u
 
       return matchesType && matchesSearch
     })
-  }, [search, transactions, typeFilter])
+  }, [search, activeTransactions, typeFilter])
+
+  // Daily average spend for Makanan & Transportasi
+  const dailyAvgStats = useMemo(() => {
+    const cycleDays = Math.max(
+      1,
+      Math.round((selectedCycle.end.getTime() - selectedCycle.start.getTime()) / (1000 * 60 * 60 * 24)) + 1
+    )
+    const expenseItems = activeTransactions.filter((t) => t.type === "expense")
+    const sumCategory = (keyword: string) =>
+      expenseItems
+        .filter((t) => (t.category?.name ?? "").toLowerCase().includes(keyword.toLowerCase()))
+        .reduce((s, t) => s + t.amount, 0)
+    return {
+      cycleDays,
+      makanan: sumCategory("makanan"),
+      transportasi: sumCategory("transportasi"),
+    }
+  }, [activeTransactions, selectedCycle])
 
   const groupedTransactions = useMemo(
     () => buildGroups(visibleTransactions, viewMode, cycle),
@@ -203,11 +244,129 @@ export function FinanceClient({ cycle, initialCategories, initialTransactions, u
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-        <div>
-          <p className="text-xs text-muted-foreground">Siklus aktif</p>
-          <p className="text-sm font-semibold text-white">{cycleLabel}</p>
+        {/* Period Selector */}
+        <div className="flex flex-col gap-1.5">
+          <p className="text-xs text-muted-foreground">Siklus ditampilkan</p>
+          <div className="relative flex items-center gap-1.5">
+            {/* Prev button */}
+            <button
+              type="button"
+              disabled={selectedCycleIndex >= availableCycles.length - 1}
+              onClick={() => {
+                setSelectedCycleIndex((i) => Math.min(i + 1, availableCycles.length - 1))
+                setShowCycleDropdown(false)
+              }}
+              className="flex h-8 w-8 items-center justify-center rounded-lg border border-[#1e2235] bg-[#0f1117] text-slate-400 transition hover:border-indigo-500/40 hover:bg-indigo-500/10 hover:text-white disabled:cursor-not-allowed disabled:opacity-30 cursor-pointer"
+              title="Siklus sebelumnya"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </button>
+
+            {/* Cycle dropdown button */}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setShowCycleDropdown((v) => !v)}
+                className="flex items-center gap-2 rounded-lg border border-[#1e2235] bg-[#0f1117] px-3 py-1.5 text-sm font-semibold text-white transition hover:border-indigo-500/40 hover:bg-indigo-500/10 cursor-pointer"
+              >
+                <span>{cycleLabel}</span>
+                {isCurrentCycle && (
+                  <span className="rounded-full bg-indigo-500/20 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-indigo-300">
+                    Aktif
+                  </span>
+                )}
+                <ChevronDown className={cn("h-3.5 w-3.5 text-slate-400 transition-transform", showCycleDropdown && "rotate-180")} />
+              </button>
+
+              {showCycleDropdown && (
+                <>
+                  {/* backdrop */}
+                  <div className="fixed inset-0 z-10" onClick={() => setShowCycleDropdown(false)} />
+                  <div className="absolute left-0 top-full z-20 mt-1.5 w-72 overflow-hidden rounded-xl border border-[#1e2235] bg-[#1a1d2e] shadow-2xl">
+                    {/* Year tabs */}
+                    {availableYears.length > 1 && (
+                      <div className="flex gap-1 border-b border-[#1e2235] px-2 py-2">
+                        {availableYears.map((year) => (
+                          <button
+                            key={year}
+                            type="button"
+                            onClick={() => setDropdownYear(year)}
+                            className={cn(
+                              "flex-1 rounded-md px-2 py-1 text-xs font-semibold transition cursor-pointer",
+                              dropdownYear === year
+                                ? "bg-indigo-600 text-white"
+                                : "text-slate-400 hover:bg-white/5 hover:text-white"
+                            )}
+                          >
+                            {year}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                    <p className="border-b border-[#1e2235] px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                      Pilih Siklus {dropdownYear}
+                    </p>
+                    <ul className="max-h-52 overflow-y-auto">
+                      {dropdownCycles.length === 0 ? (
+                        <li className="px-3 py-4 text-center text-sm text-slate-500">Tidak ada siklus di tahun ini.</li>
+                      ) : dropdownCycles.map((c) => {
+                        const idx = availableCycles.findIndex((ac) => ac.start.toISOString() === c.start.toISOString())
+                        return (
+                          <li key={c.start.toISOString()}>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setSelectedCycleIndex(idx)
+                                setShowCycleDropdown(false)
+                              }}
+                              className={cn(
+                                "flex w-full items-center justify-between gap-3 px-3 py-2.5 text-sm transition cursor-pointer hover:bg-white/5",
+                                idx === selectedCycleIndex ? "text-white" : "text-slate-400"
+                              )}
+                            >
+                              <span>{c.label}</span>
+                              <span className="flex items-center gap-2 shrink-0">
+                                {idx === 0 && (
+                                  <span className="rounded-full bg-indigo-500/20 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-indigo-300">
+                                    Aktif
+                                  </span>
+                                )}
+                                {idx === selectedCycleIndex && (
+                                  <span className="h-1.5 w-1.5 rounded-full bg-indigo-400" />
+                                )}
+                              </span>
+                            </button>
+                          </li>
+                        )
+                      })}
+                    </ul>
+                  </div>
+                </>
+              )}
+            </div>
+
+            {/* Next button */}
+            <button
+              type="button"
+              disabled={selectedCycleIndex <= 0}
+              onClick={() => {
+                setSelectedCycleIndex((i) => Math.max(i - 1, 0))
+                setShowCycleDropdown(false)
+              }}
+              className="flex h-8 w-8 items-center justify-center rounded-lg border border-[#1e2235] bg-[#0f1117] text-slate-400 transition hover:border-indigo-500/40 hover:bg-indigo-500/10 hover:text-white disabled:cursor-not-allowed disabled:opacity-30 cursor-pointer"
+              title="Siklus berikutnya"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </button>
+          </div>
         </div>
+
         <div className="flex flex-wrap gap-2">
+          <PdfExportModal
+            transactions={transactions}
+            cycle={cycle}
+            defaultCycleIndex={selectedCycleIndex}
+          />
           <button
             type="button"
             disabled
@@ -261,12 +420,20 @@ export function FinanceClient({ cycle, initialCategories, initialTransactions, u
 
       <div className="grid gap-4 xl:grid-cols-[1fr_360px]">
         <div className="rounded-xl border bg-card p-5">
-          <div className="mb-4 flex items-center justify-between gap-3">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Arus Kas Siklus Ini</p>
-              <p className="text-sm text-muted-foreground">{activeTransactions.length} transaksi dalam periode aktif</p>
+          <div className="mb-5 flex items-start justify-between gap-3">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <BarChart3 className="h-4 w-4 text-primary" />
+                <h3 className="text-sm font-bold uppercase tracking-wider text-white">
+                  Arus Kas{isCurrentCycle ? " Siklus Ini" : " Periode Ini"}
+                </h3>
+              </div>
+              <p className="text-[13px] font-medium text-slate-400">
+                <span className="font-semibold text-slate-200">{activeTransactions.length} transaksi</span>
+                {" · "}
+                <span>{cycleLabel}</span>
+              </p>
             </div>
-            <BarChart3 className="h-5 w-5 text-primary" />
           </div>
           <div className="h-[220px]">
             {chartData.length ? (
@@ -289,7 +456,11 @@ export function FinanceClient({ cycle, initialCategories, initialTransactions, u
         </div>
 
         <div className="rounded-xl border bg-card p-5">
-          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Ekstraksi Mutasi</p>
+          <div className="flex items-center gap-2 mb-1">
+            <FileText className="h-4 w-4 text-slate-500" />
+            <h3 className="text-sm font-bold uppercase tracking-wider text-white">Ekstraksi Mutasi</h3>
+          </div>
+          <p className="text-[13px] text-slate-400 mb-4">Import otomatis dari PDF mutasi rekening</p>
           <div className="mt-4 rounded-lg border border-dashed border-[#2a2f45] bg-[#0f1117]/60 p-4">
             <FileText className="mb-3 h-6 w-6 text-slate-500" />
             <p className="text-sm font-semibold text-slate-300">Preview PDF mutasi rekening</p>
@@ -320,12 +491,31 @@ export function FinanceClient({ cycle, initialCategories, initialTransactions, u
         />
       </div>
 
+      {/* Daily average spending for essential categories */}
+      <DailyEssentialCard
+        cycleDays={dailyAvgStats.cycleDays}
+        makanan={dailyAvgStats.makanan}
+        transportasi={dailyAvgStats.transportasi}
+        cycleLabel={cycleLabel}
+      />
+
       <section className="rounded-xl border bg-card">
         <div className="space-y-4 border-b p-5">
           <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
-            <div>
-              <h2 className="text-base font-bold text-white">Riwayat Transaksi</h2>
-              <p className="text-sm text-muted-foreground">Tampilkan per item, hari, bulan cutoff, atau tahun.</p>
+            <div className="flex items-center gap-3">
+              <div>
+                <h2 className="text-base font-bold text-white">Riwayat Transaksi</h2>
+                <p className="mt-0.5 text-[13px] font-medium text-slate-400">
+                  <span className="font-semibold text-slate-200">{visibleTransactions.length} transaksi</span>
+                  {" · "}
+                  <span>{cycleLabel}</span>
+                </p>
+              </div>
+              {!isCurrentCycle && (
+                <span className="hidden sm:inline-flex items-center rounded-full border border-indigo-500/30 bg-indigo-500/10 px-2.5 py-1 text-[11px] font-semibold text-indigo-300">
+                  Periode lalu
+                </span>
+              )}
             </div>
             <div className="flex flex-wrap gap-2">
               {viewOptions.map((option) => (
@@ -477,7 +667,153 @@ export function FinanceClient({ cycle, initialCategories, initialTransactions, u
   )
 }
 
+function DailyEssentialCard({
+  cycleDays,
+  cycleLabel,
+  makanan,
+  transportasi,
+}: {
+  cycleDays: number
+  cycleLabel: string
+  makanan: number
+  transportasi: number
+}) {
+  const avgMakanan = makanan / cycleDays
+  const avgTransportasi = transportasi / cycleDays
+  const total = makanan + transportasi
+  const hasData = total > 0
+
+  const makananPct = hasData ? (makanan / total) * 100 : 0
+  const transportasiPct = hasData ? (transportasi / total) * 100 : 0
+
+  const items = [
+    {
+      avg: avgMakanan,
+      borderColor: "border-amber-500/30",
+      color: "bg-amber-500",
+      colorBg: "bg-amber-500/10",
+      colorText: "text-amber-400",
+      colorTextMuted: "text-amber-500/70",
+      emoji: "🍽️",
+      label: "Makanan",
+      pct: makananPct,
+      total: makanan,
+      width: makananPct,
+    },
+    {
+      avg: avgTransportasi,
+      borderColor: "border-sky-500/30",
+      color: "bg-sky-500",
+      colorBg: "bg-sky-500/10",
+      colorText: "text-sky-400",
+      colorTextMuted: "text-sky-500/70",
+      emoji: "🚌",
+      label: "Transportasi",
+      pct: transportasiPct,
+      total: transportasi,
+      width: transportasiPct,
+    },
+  ]
+
+  return (
+    <div className="rounded-xl border bg-card p-5">
+      {/* Header */}
+      <div className="mb-5 flex items-start justify-between gap-3">
+        <div className="space-y-1">
+          <div className="flex items-center gap-2">
+            <span className="text-base">📊</span>
+            <h3 className="text-sm font-bold uppercase tracking-wider text-white">Pengeluaran Harian Pokok</h3>
+          </div>
+          <p className="text-[13px] font-medium text-slate-400">
+            Rata-rata per hari ·{" "}
+            <span className="font-semibold text-slate-200">{cycleLabel}</span>
+            {" "}
+            <span className="text-slate-500">({cycleDays} hari)</span>
+          </p>
+        </div>
+      </div>
+
+      {hasData ? (
+        <>
+          {/* Segmented progress bar */}
+          <div className="mb-1 flex h-3 overflow-hidden rounded-full bg-[#0f1117]">
+            <div
+              className="h-full bg-amber-500 transition-all duration-500"
+              style={{ width: `${makananPct}%` }}
+            />
+            <div
+              className="h-full bg-sky-500 transition-all duration-500"
+              style={{ width: `${transportasiPct}%` }}
+            />
+          </div>
+          <div className="mb-5 flex justify-between text-[11px] text-slate-500">
+            <span>🍽️ {makananPct.toFixed(0)}% Makanan</span>
+            <span>Transportasi {transportasiPct.toFixed(0)}% 🚌</span>
+          </div>
+
+          {/* Two category cards */}
+          <div className="grid gap-4 sm:grid-cols-2">
+            {items.map((item) => (
+              <div
+                key={item.label}
+                className={`rounded-xl border p-4 ${item.colorBg} ${item.borderColor}`}
+              >
+                {/* Category label */}
+                <div className="mb-3 flex items-center gap-2">
+                  <span className="text-xl">{item.emoji}</span>
+                  <span className="text-sm font-bold text-white">{item.label}</span>
+                  <span className={`ml-auto text-xs font-semibold ${item.colorText}`}>
+                    {item.pct.toFixed(0)}%
+                  </span>
+                </div>
+
+                {/* Main avg per day */}
+                <p className={`text-3xl font-extrabold tracking-tight ${item.colorText}`}>
+                  {formatCompact(item.avg)}
+                  <span className="ml-1 text-base font-semibold text-slate-400">/hari</span>
+                </p>
+
+                {/* Total in cycle */}
+                <p className="mt-2 text-[13px] font-medium text-slate-400">
+                  Total periode:{" "}
+                  <span className="font-bold text-slate-200">{formatCompact(item.total)}</span>
+                </p>
+
+                {/* Projections row */}
+                <div className="mt-3 grid grid-cols-2 gap-2">
+                  <div className={`rounded-lg px-2.5 py-2 ${item.colorBg}`}>
+                    <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">Per Minggu</p>
+                    <p className={`mt-0.5 text-sm font-bold ${item.colorText}`}>{formatCompact(item.avg * 7)}</p>
+                  </div>
+                  <div className={`rounded-lg px-2.5 py-2 ${item.colorBg}`}>
+                    <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">Per Bulan</p>
+                    <p className={`mt-0.5 text-sm font-bold ${item.colorText}`}>{formatCompact(item.avg * 30)}</p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Combined total row */}
+          <div className="mt-4 flex items-center justify-between rounded-xl border border-[#1e2235] bg-[#0f1117] px-4 py-3">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Total Kebutuhan Pokok / Hari</p>
+              <p className="mt-0.5 text-[13px] text-slate-400">Makanan + Transportasi</p>
+            </div>
+            <p className="text-xl font-extrabold text-white">{formatCompact(avgMakanan + avgTransportasi)}</p>
+          </div>
+        </>
+      ) : (
+        <div className="flex h-32 items-center justify-center rounded-xl border border-dashed border-[#1e2235] text-sm text-muted-foreground">
+          Belum ada transaksi kategori Makanan atau Transportasi di periode ini.
+        </div>
+      )}
+    </div>
+  )
+}
+
 function CategoryShareChart({
+
   data,
   title,
   tone,
@@ -487,13 +823,25 @@ function CategoryShareChart({
   tone: "expense" | "income"
 }) {
   const total = data.reduce((sum, item) => sum + item.amount, 0)
+  const icon = tone === "income" ? "📈" : "📉"
 
   return (
     <div className="rounded-xl border bg-card p-5">
-      <div className="mb-4">
-        <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{title}</p>
-        <p className="text-sm text-muted-foreground">
-          {data.length ? `${data.length} kategori aktif · ${formatCompact(total)}` : "Belum ada kategori dengan nominal"}
+      <div className="mb-5 space-y-1">
+        <div className="flex items-center gap-2">
+          <span className="text-base">{icon}</span>
+          <h3 className="text-sm font-bold uppercase tracking-wider text-white">{title}</h3>
+        </div>
+        <p className="text-[13px] font-medium text-slate-400">
+          {data.length ? (
+            <>
+              <span className="font-semibold text-slate-200">{data.length} kategori aktif</span>
+              {" · "}
+              <span>{formatCompact(total)}</span>
+            </>
+          ) : (
+            "Belum ada kategori dengan nominal"
+          )}
         </p>
       </div>
       {data.length ? (
