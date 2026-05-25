@@ -2,7 +2,8 @@
 import { usePathname } from "next/navigation"
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
-import { Languages, LogOut, Moon, Sun } from "lucide-react"
+import { Languages, LogOut, Menu, Moon, Sun } from "lucide-react"
+import { useSidebar } from "@/components/providers/SidebarProvider"
 import { createClient } from "@/lib/supabase/client"
 import { useAppPreferences, type AppLanguage } from "@/components/providers/AppPreferencesProvider"
 
@@ -29,6 +30,7 @@ export function TopBar() {
   const pathname = usePathname()
   const router = useRouter()
   const { language, setLanguage, setTheme, t, theme } = useAppPreferences()
+  const { toggleMobile } = useSidebar()
   const base = "/" + pathname.split("/")[1]
   const [todayLabel, setTodayLabel] = useState("")
   const [loggingOut, setLoggingOut] = useState(false)
@@ -46,8 +48,19 @@ export function TopBar() {
   }
 
   return (
-    <header className="border-b bg-card px-6 py-4 flex items-center justify-between gap-4">
-      <h1 className="text-base font-semibold">{t(titleKeys[base] ?? "nav.dashboard")}</h1>
+    <header className="border-b bg-card px-4 md:px-6 py-4 flex items-center justify-between gap-4">
+      <div className="flex items-center gap-3">
+        {/* Mobile menu toggle */}
+        <button
+          type="button"
+          onClick={toggleMobile}
+          className="md:hidden inline-flex h-9 w-9 items-center justify-center rounded-lg border border-[#1e2235] text-muted-foreground transition hover:bg-white/5 hover:text-foreground cursor-pointer"
+          aria-label="Buka menu navigasi"
+        >
+          <Menu className="h-4 w-4" />
+        </button>
+        <h1 className="text-base font-semibold">{t(titleKeys[base] ?? "nav.dashboard")}</h1>
+      </div>
       <div className="flex items-center gap-2">
         <button
           type="button"
