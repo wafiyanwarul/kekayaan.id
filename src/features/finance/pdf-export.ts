@@ -1,8 +1,6 @@
 import type { FinanceCycle, FinanceTransaction } from "./types"
 import { formatCycleLabel, isInRange, summarizeTransactions } from "./utils"
 
-// ─── helpers ────────────────────────────────────────────────────────────────
-
 function rp(amount: number) {
   return new Intl.NumberFormat("id-ID", {
     style: "currency",
@@ -12,7 +10,7 @@ function rp(amount: number) {
   }).format(amount)
 }
 
-function short(value: string) {
+function shortDate(value: string) {
   return new Date(`${value}T00:00:00`).toLocaleDateString("id-ID", {
     day: "numeric",
     month: "short",
@@ -24,8 +22,6 @@ function pct(value: number, total: number) {
   if (total === 0) return "0%"
   return `${((value / total) * 100).toFixed(1)}%`
 }
-
-// ─── main export ─────────────────────────────────────────────────────────────
 
 export async function exportCashflowPdf(
   transactions: FinanceTransaction[],
@@ -49,7 +45,6 @@ export async function exportCashflowPdf(
     .filter((t) => t.type === "expense")
     .sort((a, b) => b.transaction_date.localeCompare(a.transaction_date))
 
-  // Category breakdown
   const categoryMap = (type: "income" | "expense") => {
     const map = new Map<string, number>()
     filtered
@@ -74,353 +69,306 @@ export async function exportCashflowPdf(
     .filter((t) => (t.category?.name ?? "").toLowerCase().includes("transportasi"))
     .reduce((s, t) => s + t.amount, 0)
 
-  // ── Colour palette (light/professional) ───────────────────────────────────
-  const C = {
-    white:     [255, 255, 255] as [number, number, number],
-    pageGrey:  [248, 249, 252] as [number, number, number],  // very light page bg
-    cardGrey:  [241, 243, 248] as [number, number, number],  // card bg
-    lineGrey:  [220, 224, 235] as [number, number, number],  // table alt row
-    border:    [210, 214, 228] as [number, number, number],
-    textDark:  [22, 28, 48]   as [number, number, number],   // near-black heading
-    textMed:   [71, 85, 105]  as [number, number, number],   // slate-600
-    textLight: [148, 163, 184] as [number, number, number],  // slate-400
-    primary:   [79, 70, 229]  as [number, number, number],   // indigo-600
-    primaryBg: [238, 242, 255] as [number, number, number],  // indigo-50
-    income:    [5, 150, 105]  as [number, number, number],   // emerald-600
-    incomeBg:  [209, 250, 229] as [number, number, number],  // emerald-100
-    expense:   [220, 38, 38]  as [number, number, number],   // red-600
-    expenseBg: [254, 226, 226] as [number, number, number],  // red-100
-    amber:     [180, 110, 0]  as [number, number, number],
-    amberBg:   [254, 243, 199] as [number, number, number],
-    sky:       [2, 132, 199]  as [number, number, number],
-    skyBg:     [224, 242, 254] as [number, number, number],
-    surplusBg: (v: number) => v >= 0 ? [209, 250, 229] as [number, number, number] : [254, 226, 226] as [number, number, number],
-  }
-
-  // ── Build PDF ──────────────────────────────────────────────────────────────
+  // ── Document setup ─────────────────────────────────────────────────────────
   const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" })
   const pageW = doc.internal.pageSize.getWidth()
   const pageH = doc.internal.pageSize.getHeight()
-  const margin = 18
-  const contentW = pageW - margin * 2
+  const M = 18          // margin
+  const W = pageW - M * 2 // content width
 
-  // ── Helper: fill entire page white (called for every page via didDrawPage) ──
-  function fillPageBg() {
-    doc.setFillColor(...C.pageGrey)
+  // ── Professional colour palette (white bg, dark text) ────────────────────
+  const C = {
+    pageBg:      [255, 255, 255] as [number, number, number],
+    rowAlt:      [249, 250, 251] as [number, number, number],  // gray-50
+    sectionBg:   [243, 244, 246] as [number, number, number],  // gray-100
+    borderGray:  [229, 231, 235] as [number, number, number],  // gray-200
+    textBody:    [17,  24,  39]  as [number, number, number],  // gray-900
+    textMed:     [75,  85, 99]   as [number, number, number],  // gray-600
+    textLight:   [156,163,175]   as [number, number, number],  // gray-400
+    white:       [255,255,255]   as [number, number, number],
+    indigo:      [79, 70,229]    as [number, number, number],  // indigo-600
+    indigoDark:  [49, 46,129]    as [number, number, number],  // indigo-900
+    indigoLight: [238,242,255]   as [number, number, number],  // indigo-50
+    green:       [22,163, 74]    as [number, number, number],  // green-600
+    greenDark:   [20,  83, 45]   as [number, number, number],
+    greenLight:  [220,252,231]   as [number, number, number],  // green-100
+    red:         [220, 38, 38]   as [number, number, number],  // red-600
+    redDark:     [127, 29, 29]   as [number, number, number],
+    redLight:    [254,226,226]   as [number, number, number],  // red-100
+    amber:       [180,110,  0]   as [number, number, number],
+    amberLight:  [255,251,235]   as [number, number, number],
+    sky:         [  2,132,199]   as [number, number, number],
+    skyLight:    [224,242,254]   as [number, number, number],
+  }
+
+  // ── Fill page background (MUST use addPage event so new pages are filled
+  //    BEFORE content is drawn — avoids the "didDrawPage covers content" bug) ──
+  function fillBg() {
+    doc.setFillColor(...C.pageBg)
     doc.rect(0, 0, pageW, pageH, "F")
   }
 
-  // Page 1 background
-  fillPageBg()
+  // Fill page 1 immediately
+  fillBg()
+
+  // Subscribe so every subsequent page created by autoTable also gets white bg
+  ;(doc.internal as any).events.subscribe("addPage", fillBg)
 
   let y = 0
 
   // ── HEADER BANNER ─────────────────────────────────────────────────────────
-  const bannerH = 36
-  doc.setFillColor(...C.primary)
-  doc.rect(0, 0, pageW, bannerH, "F")
+  const BANNER_H = 34
+  doc.setFillColor(...C.indigoDark)
+  doc.rect(0, 0, pageW, BANNER_H, "F")
 
-  // Accent top strip
-  doc.setFillColor(99, 90, 255)
+  // Top accent stripe
+  doc.setFillColor(...C.indigo)
   doc.rect(0, 0, pageW, 3, "F")
 
+  // Brand mark — "K" box
+  const BX = M, BY = 7, BW = 10, BH = 10
+  doc.setFillColor(...C.indigo)
+  doc.roundedRect(BX, BY, BW, BH, 1.5, 1.5, "F")
   doc.setTextColor(...C.white)
-  doc.setFontSize(20)
+  doc.setFontSize(8)
   doc.setFont("helvetica", "bold")
-  doc.text("kekayaan.id", margin, 15)
+  doc.text("K", BX + BW / 2, BY + BH / 2 + 2.5, { align: "center" })
 
-  doc.setFontSize(9)
+  // App name + subtitle
+  doc.setFontSize(16)
+  doc.setFont("helvetica", "bold")
+  doc.setTextColor(...C.white)
+  doc.text("kekayaan.id", BX + BW + 3, BY + 7)
+  doc.setFontSize(7.5)
   doc.setFont("helvetica", "normal")
-  doc.setTextColor(210, 220, 255)
-  doc.text("Laporan Arus Kas Bulanan", margin, 23)
-  doc.text(`Periode: ${label}`, margin, 29)
+  doc.setTextColor(196, 196, 255)
+  doc.text("Laporan Arus Kas Bulanan", BX + BW + 3, BY + 13)
+
+  // Date info right-aligned
+  doc.setFontSize(7)
+  doc.setTextColor(196, 196, 255)
+  doc.text(`Periode: ${label}`, pageW - M, BY + 6, { align: "right" })
   doc.text(
     `Dicetak: ${new Date().toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" })}`,
-    pageW - margin, 29, { align: "right" }
+    pageW - M, BY + 12, { align: "right" }
   )
 
-  y = bannerH + 8
+  y = BANNER_H + 8
 
   // ── SUMMARY CARDS ─────────────────────────────────────────────────────────
-  const cardW = (contentW - 9) / 4
-  const cardH = 26
+  const CW = (W - 9) / 4
+  const CH = 26
+  const surplusIsPos = summary.surplus >= 0
 
-  const summaryCards = [
-    { label: "PEMASUKAN",    value: rp(summary.income),  bg: C.incomeBg,  accent: C.income,  text: C.income },
-    { label: "PENGELUARAN",  value: rp(summary.expense), bg: C.expenseBg, accent: C.expense, text: C.expense },
-    { label: "SURPLUS",      value: rp(summary.surplus), bg: C.surplusBg(summary.surplus), accent: summary.surplus >= 0 ? C.income : C.expense, text: summary.surplus >= 0 ? C.income : C.expense },
-    { label: "SAVINGS RATE", value: `${summary.savingsRate.toFixed(1)}%`, bg: C.primaryBg, accent: C.primary, text: C.primary },
+  const cards = [
+    { label: "PEMASUKAN",    val: rp(summary.income),                  bg: C.greenLight, bar: C.green, txt: C.green },
+    { label: "PENGELUARAN",  val: rp(summary.expense),                 bg: C.redLight,   bar: C.red,   txt: C.red },
+    { label: "SURPLUS",      val: rp(summary.surplus),                 bg: surplusIsPos ? C.greenLight : C.redLight, bar: surplusIsPos ? C.green : C.red, txt: surplusIsPos ? C.green : C.red },
+    { label: "SAVINGS RATE", val: `${summary.savingsRate.toFixed(1)}%`, bg: C.indigoLight,bar: C.indigo,txt: C.indigo },
   ]
 
-  summaryCards.forEach((card, i) => {
-    const x = margin + i * (cardW + 3)
+  cards.forEach((card, i) => {
+    const x = M + i * (CW + 3)
+    // Card bg
     doc.setFillColor(...card.bg)
-    doc.roundedRect(x, y, cardW, cardH, 2, 2, "F")
-    doc.setDrawColor(...card.accent)
-    doc.setLineWidth(0.5)
-    doc.roundedRect(x, y, cardW, cardH, 2, 2, "S")
-    // left accent bar
-    doc.setFillColor(...card.accent)
-    doc.rect(x, y, 2.5, cardH, "F")
-
+    doc.setDrawColor(...card.bar)
+    doc.setLineWidth(0.4)
+    doc.roundedRect(x, y, CW, CH, 2, 2, "FD")
+    // Left bar
+    doc.setFillColor(...card.bar)
+    doc.roundedRect(x, y, 3, CH, 1, 1, "F")
+    // Label
     doc.setTextColor(...C.textMed)
     doc.setFontSize(6.5)
     doc.setFont("helvetica", "bold")
-    doc.text(card.label, x + 6, y + 8)
-
-    doc.setTextColor(...card.text)
-    doc.setFontSize(9.5)
+    doc.text(card.label, x + 7, y + 8)
+    // Value
+    doc.setTextColor(...card.txt)
+    doc.setFontSize(9)
     doc.setFont("helvetica", "bold")
-    doc.text(card.value, x + 6, y + 19)
+    doc.text(card.val, x + 7, y + 19)
   })
 
-  y += cardH + 8
+  y += CH + 8
 
-  // ── DIVIDER ───────────────────────────────────────────────────────────────
-  doc.setDrawColor(...C.border)
+  // ── SECTION DIVIDER ───────────────────────────────────────────────────────
+  doc.setDrawColor(...C.borderGray)
   doc.setLineWidth(0.3)
-  doc.line(margin, y, pageW - margin, y)
+  doc.line(M, y, pageW - M, y)
   y += 6
 
-  // ── CATEGORY BREAKDOWN ────────────────────────────────────────────────────
-  const halfW = (contentW - 5) / 2
+  // ── CATEGORY BREAKDOWN (two-column) ───────────────────────────────────────
+  const halfW = (W - 5) / 2
 
-  // Income header
-  doc.setFillColor(...C.incomeBg)
-  doc.roundedRect(margin, y - 1, halfW, 7, 1, 1, "F")
-  doc.setTextColor(...C.income)
-  doc.setFontSize(8.5)
+  // Income header pill
+  doc.setFillColor(...C.greenLight)
+  doc.setDrawColor(...C.green)
+  doc.setLineWidth(0.3)
+  doc.roundedRect(M, y - 1, halfW, 7, 1.5, 1.5, "FD")
+  doc.setTextColor(...C.green)
+  doc.setFontSize(8)
   doc.setFont("helvetica", "bold")
-  doc.text("(+)  Kategori Pemasukan", margin + 3, y + 4.5)
+  doc.text("(+)  Kategori Pemasukan", M + 4, y + 4.5)
 
-  // Expense header
-  doc.setFillColor(...C.expenseBg)
-  doc.roundedRect(margin + halfW + 5, y - 1, halfW, 7, 1, 1, "F")
-  doc.setTextColor(...C.expense)
-  doc.text("(-)  Kategori Pengeluaran", margin + halfW + 8, y + 4.5)
+  // Expense header pill
+  doc.setFillColor(...C.redLight)
+  doc.setDrawColor(...C.red)
+  doc.roundedRect(M + halfW + 5, y - 1, halfW, 7, 1.5, 1.5, "FD")
+  doc.setTextColor(...C.red)
+  doc.text("(-)  Kategori Pengeluaran", M + halfW + 9, y + 4.5)
 
   const incomeCats = categoryMap("income")
+  const expenseCats = categoryMap("expense")
 
   autoTable(doc, {
     startY: y + 8,
-    margin: { left: margin, right: margin + halfW + 5 },
+    margin: { left: M, right: M + halfW + 5 },
     head: [["Kategori", "Total", "Porsi"]],
-    body: incomeCats.length ? incomeCats : [["—", "—", "—"]],
+    body: incomeCats.length ? incomeCats : [["(Tidak ada)", "", ""]],
     theme: "plain",
-    headStyles: {
-      fillColor: [5, 100, 70],
-      textColor: C.white,
-      fontSize: 7,
-      fontStyle: "bold",
-      cellPadding: { top: 2.5, bottom: 2.5, left: 4, right: 2 },
-    },
-    bodyStyles: {
-      fillColor: C.white,
-      textColor: C.textDark,
-      fontSize: 7.5,
-      cellPadding: { top: 3, bottom: 3, left: 4, right: 2 },
-    },
-    alternateRowStyles: { fillColor: C.cardGrey },
-    columnStyles: {
-      1: { halign: "right", textColor: C.textMed },
-      2: { halign: "right", textColor: C.income, fontStyle: "bold" },
-    },
-    tableLineColor: C.border,
+    headStyles: { fillColor: C.greenDark, textColor: C.white, fontSize: 7, fontStyle: "bold", cellPadding: { top: 2.5, bottom: 2.5, left: 4, right: 2 } },
+    bodyStyles: { fillColor: C.pageBg, textColor: C.textBody, fontSize: 7.5, cellPadding: { top: 3, bottom: 3, left: 4, right: 2 } },
+    alternateRowStyles: { fillColor: C.rowAlt },
+    columnStyles: { 1: { halign: "right", textColor: C.textMed }, 2: { halign: "right", textColor: C.green, fontStyle: "bold" } },
+    tableLineColor: C.borderGray,
     tableLineWidth: 0.2,
-    didDrawPage: fillPageBg,
   })
 
-  const catTableEndY = (doc as any).lastAutoTable.finalY
+  const catEndLeft = (doc as any).lastAutoTable.finalY
 
   autoTable(doc, {
     startY: y + 8,
-    margin: { left: margin + halfW + 5, right: margin },
+    margin: { left: M + halfW + 5, right: M },
     head: [["Kategori", "Total", "Porsi"]],
-    body: categoryMap("expense").length ? categoryMap("expense") : [["—", "—", "—"]],
+    body: expenseCats.length ? expenseCats : [["(Tidak ada)", "", ""]],
     theme: "plain",
-    headStyles: {
-      fillColor: [160, 25, 25],
-      textColor: C.white,
-      fontSize: 7,
-      fontStyle: "bold",
-      cellPadding: { top: 2.5, bottom: 2.5, left: 4, right: 2 },
-    },
-    bodyStyles: {
-      fillColor: C.white,
-      textColor: C.textDark,
-      fontSize: 7.5,
-      cellPadding: { top: 3, bottom: 3, left: 4, right: 2 },
-    },
-    alternateRowStyles: { fillColor: C.cardGrey },
-    columnStyles: {
-      1: { halign: "right", textColor: C.textMed },
-      2: { halign: "right", textColor: C.expense, fontStyle: "bold" },
-    },
-    tableLineColor: C.border,
+    headStyles: { fillColor: C.redDark, textColor: C.white, fontSize: 7, fontStyle: "bold", cellPadding: { top: 2.5, bottom: 2.5, left: 4, right: 2 } },
+    bodyStyles: { fillColor: C.pageBg, textColor: C.textBody, fontSize: 7.5, cellPadding: { top: 3, bottom: 3, left: 4, right: 2 } },
+    alternateRowStyles: { fillColor: C.rowAlt },
+    columnStyles: { 1: { halign: "right", textColor: C.textMed }, 2: { halign: "right", textColor: C.red, fontStyle: "bold" } },
+    tableLineColor: C.borderGray,
     tableLineWidth: 0.2,
-    didDrawPage: fillPageBg,
   })
 
-  y = Math.max(catTableEndY, (doc as any).lastAutoTable.finalY) + 8
+  y = Math.max(catEndLeft, (doc as any).lastAutoTable.finalY) + 8
 
   // ── DAILY ESSENTIAL BOX ───────────────────────────────────────────────────
-  const essentialH = 24
-  doc.setFillColor(...C.cardGrey)
-  doc.setDrawColor(...C.border)
+  const EH = 24
+  doc.setFillColor(...C.sectionBg)
+  doc.setDrawColor(...C.borderGray)
   doc.setLineWidth(0.3)
-  doc.roundedRect(margin, y, contentW, essentialH, 2, 2, "FD")
+  doc.roundedRect(M, y, W, EH, 2, 2, "FD")
 
   doc.setTextColor(...C.textMed)
   doc.setFontSize(6.5)
   doc.setFont("helvetica", "bold")
-  doc.text("PENGELUARAN HARIAN POKOK (ESTIMASI RATA-RATA)", margin + 4, y + 6)
+  doc.text("ESTIMASI PENGELUARAN HARIAN POKOK", M + 4, y + 6)
 
-  // Makanan
+  // Makanan side
   doc.setFillColor(...C.amber)
-  doc.rect(margin + 4, y + 9, 2.5, 10, "F")
+  doc.rect(M + 4, y + 9, 2.5, 10, "F")
   doc.setTextColor(...C.textMed)
   doc.setFontSize(7)
   doc.setFont("helvetica", "normal")
-  doc.text("Makanan", margin + 9, y + 14)
+  doc.text("Makanan", M + 10, y + 14)
   doc.setTextColor(...C.amber)
   doc.setFont("helvetica", "bold")
-  doc.text(`${rp(makananTotal / cycleDays)}/hari  (total ${rp(makananTotal)})`, margin + 9, y + 20)
+  doc.text(`${rp(makananTotal / cycleDays)}/hari  (total: ${rp(makananTotal)})`, M + 10, y + 20)
 
-  // Transportasi
-  const midX = margin + contentW / 2 + 4
+  // Transportasi side
+  const MX = M + W / 2 + 4
   doc.setFillColor(...C.sky)
-  doc.rect(midX, y + 9, 2.5, 10, "F")
+  doc.rect(MX, y + 9, 2.5, 10, "F")
   doc.setTextColor(...C.textMed)
-  doc.setFontSize(7)
   doc.setFont("helvetica", "normal")
-  doc.text("Transportasi", midX + 5, y + 14)
+  doc.text("Transportasi", MX + 5, y + 14)
   doc.setTextColor(...C.sky)
   doc.setFont("helvetica", "bold")
-  doc.text(`${rp(transportasiTotal / cycleDays)}/hari  (total ${rp(transportasiTotal)})`, midX + 5, y + 20)
+  doc.text(`${rp(transportasiTotal / cycleDays)}/hari  (total: ${rp(transportasiTotal)})`, MX + 5, y + 20)
 
-  y += essentialH + 8
+  y += EH + 8
 
-  // ── INCOME TABLE ──────────────────────────────────────────────────────────
-  doc.setFillColor(...C.incomeBg)
-  doc.roundedRect(margin, y - 1, 55, 7, 1, 1, "F")
-  doc.setTextColor(...C.income)
-  doc.setFontSize(8.5)
+  // ── INCOME DETAIL TABLE ───────────────────────────────────────────────────
+  doc.setFillColor(...C.greenLight)
+  doc.setDrawColor(...C.green)
+  doc.setLineWidth(0.3)
+  doc.roundedRect(M, y - 1, 60, 7, 1.5, 1.5, "FD")
+  doc.setTextColor(...C.green)
+  doc.setFontSize(8)
   doc.setFont("helvetica", "bold")
-  doc.text("(+)  Daftar Pemasukan", margin + 3, y + 4.5)
+  doc.text("(+)  Daftar Pemasukan", M + 4, y + 4.5)
 
   autoTable(doc, {
     startY: y + 8,
-    margin: { left: margin, right: margin },
-    head: [["Tanggal", "Sumber", "Kategori", "Catatan", "Jumlah"]],
-    body: incomeItems.map((t) => [
-      short(t.transaction_date),
-      t.title,
-      t.category?.name ?? "—",
-      t.notes ?? "—",
-      rp(t.amount),
-    ]),
+    margin: { left: M, right: M },
+    head: [["Tanggal", "Sumber / Keterangan", "Kategori", "Catatan", "Jumlah"]],
+    body: incomeItems.length
+      ? incomeItems.map((t) => [shortDate(t.transaction_date), t.title, t.category?.name ?? "-", t.notes ?? "-", rp(t.amount)])
+      : [["", "(Tidak ada pemasukan di periode ini)", "", "", ""]],
     theme: "plain",
-    headStyles: {
-      fillColor: [5, 100, 70],
-      textColor: C.white,
-      fontSize: 7,
-      fontStyle: "bold",
-      cellPadding: { top: 3, bottom: 3, left: 4, right: 4 },
-    },
-    bodyStyles: {
-      fillColor: C.white,
-      textColor: C.textDark,
-      fontSize: 7.5,
-      cellPadding: { top: 3.5, bottom: 3.5, left: 4, right: 4 },
-    },
-    alternateRowStyles: { fillColor: C.cardGrey },
+    headStyles: { fillColor: C.greenDark, textColor: C.white, fontSize: 7, fontStyle: "bold", cellPadding: { top: 3, bottom: 3, left: 4, right: 3 } },
+    bodyStyles: { fillColor: C.pageBg, textColor: C.textBody, fontSize: 7.5, cellPadding: { top: 3.5, bottom: 3.5, left: 4, right: 3 } },
+    alternateRowStyles: { fillColor: C.rowAlt },
     columnStyles: {
-      0: { cellWidth: 24 },
-      1: { cellWidth: 40 },
+      0: { cellWidth: 23 },
+      1: { cellWidth: 42 },
       2: { cellWidth: 28 },
       3: { cellWidth: "auto" },
-      4: { halign: "right", cellWidth: 30, textColor: C.income, fontStyle: "bold" },
+      4: { halign: "right", cellWidth: 30, textColor: C.green, fontStyle: "bold" },
     },
-    tableLineColor: C.border,
+    tableLineColor: C.borderGray,
     tableLineWidth: 0.2,
-    foot: [[{
-      content: `Total Pemasukan: ${rp(summary.income)}`,
-      colSpan: 5,
-      styles: { halign: "right", textColor: C.income, fontStyle: "bold", fontSize: 8, fillColor: C.incomeBg },
-    }]],
-    footStyles: { fillColor: C.incomeBg },
-    didDrawPage: fillPageBg,
+    foot: [[{ content: `Total Pemasukan: ${rp(summary.income)}`, colSpan: 5, styles: { halign: "right", textColor: C.green, fontStyle: "bold", fontSize: 8, fillColor: C.greenLight } }]],
   })
 
   y = (doc as any).lastAutoTable.finalY + 8
 
-  // ── EXPENSE TABLE ─────────────────────────────────────────────────────────
-  doc.setFillColor(...C.expenseBg)
-  doc.roundedRect(margin, y - 1, 55, 7, 1, 1, "F")
-  doc.setTextColor(...C.expense)
-  doc.setFontSize(8.5)
+  // ── EXPENSE DETAIL TABLE ──────────────────────────────────────────────────
+  doc.setFillColor(...C.redLight)
+  doc.setDrawColor(...C.red)
+  doc.setLineWidth(0.3)
+  doc.roundedRect(M, y - 1, 60, 7, 1.5, 1.5, "FD")
+  doc.setTextColor(...C.red)
+  doc.setFontSize(8)
   doc.setFont("helvetica", "bold")
-  doc.text("(-)  Daftar Pengeluaran", margin + 3, y + 4.5)
+  doc.text("(-)  Daftar Pengeluaran", M + 4, y + 4.5)
 
   autoTable(doc, {
     startY: y + 8,
-    margin: { left: margin, right: margin },
-    head: [["Tanggal", "Item", "Kategori", "Catatan", "Jumlah"]],
-    body: expenseItems.map((t) => [
-      short(t.transaction_date),
-      t.title,
-      t.category?.name ?? "—",
-      t.notes ?? "—",
-      rp(t.amount),
-    ]),
+    margin: { left: M, right: M },
+    head: [["Tanggal", "Item / Keterangan", "Kategori", "Catatan", "Jumlah"]],
+    body: expenseItems.length
+      ? expenseItems.map((t) => [shortDate(t.transaction_date), t.title, t.category?.name ?? "-", t.notes ?? "-", rp(t.amount)])
+      : [["", "(Tidak ada pengeluaran di periode ini)", "", "", ""]],
     theme: "plain",
-    headStyles: {
-      fillColor: [160, 25, 25],
-      textColor: C.white,
-      fontSize: 7,
-      fontStyle: "bold",
-      cellPadding: { top: 3, bottom: 3, left: 4, right: 4 },
-    },
-    bodyStyles: {
-      fillColor: C.white,
-      textColor: C.textDark,
-      fontSize: 7.5,
-      cellPadding: { top: 3.5, bottom: 3.5, left: 4, right: 4 },
-    },
-    alternateRowStyles: { fillColor: C.cardGrey },
+    headStyles: { fillColor: C.redDark, textColor: C.white, fontSize: 7, fontStyle: "bold", cellPadding: { top: 3, bottom: 3, left: 4, right: 3 } },
+    bodyStyles: { fillColor: C.pageBg, textColor: C.textBody, fontSize: 7.5, cellPadding: { top: 3.5, bottom: 3.5, left: 4, right: 3 } },
+    alternateRowStyles: { fillColor: C.rowAlt },
     columnStyles: {
-      0: { cellWidth: 24 },
-      1: { cellWidth: 40 },
+      0: { cellWidth: 23 },
+      1: { cellWidth: 42 },
       2: { cellWidth: 28 },
       3: { cellWidth: "auto" },
-      4: { halign: "right", cellWidth: 30, textColor: C.expense, fontStyle: "bold" },
+      4: { halign: "right", cellWidth: 30, textColor: C.red, fontStyle: "bold" },
     },
-    tableLineColor: C.border,
+    tableLineColor: C.borderGray,
     tableLineWidth: 0.2,
-    foot: [[{
-      content: `Total Pengeluaran: ${rp(summary.expense)}`,
-      colSpan: 5,
-      styles: { halign: "right", textColor: C.expense, fontStyle: "bold", fontSize: 8, fillColor: C.expenseBg },
-    }]],
-    footStyles: { fillColor: C.expenseBg },
-    didDrawPage: fillPageBg,
+    foot: [[{ content: `Total Pengeluaran: ${rp(summary.expense)}`, colSpan: 5, styles: { halign: "right", textColor: C.red, fontStyle: "bold", fontSize: 8, fillColor: C.redLight } }]],
   })
 
   // ── FOOTER ON EVERY PAGE ─────────────────────────────────────────────────
   const totalPages = (doc.internal as any).getNumberOfPages()
   for (let p = 1; p <= totalPages; p++) {
     doc.setPage(p)
-    // Footer strip
-    doc.setFillColor(...C.primary)
-    doc.rect(0, pageH - 9, pageW, 9, "F")
+    doc.setFillColor(...C.indigoDark)
+    doc.rect(0, pageH - 8, pageW, 8, "F")
     doc.setTextColor(...C.white)
-    doc.setFontSize(7)
+    doc.setFontSize(6.5)
     doc.setFont("helvetica", "normal")
-    doc.text("kekayaan.id — Laporan Arus Kas", margin, pageH - 3)
-    doc.text(`Halaman ${p} dari ${totalPages}`, pageW - margin, pageH - 3, { align: "right" })
+    doc.text("kekayaan.id — Laporan Arus Kas Bulanan", M, pageH - 2.5)
+    doc.text(`Halaman ${p} dari ${totalPages}`, pageW - M, pageH - 2.5, { align: "right" })
   }
 
-  // ── SAVE ──────────────────────────────────────────────────────────────────
   const fileName = `laporan-keuangan_${selectedStart.toISOString().slice(0, 10)}_${selectedEnd.toISOString().slice(0, 10)}.pdf`
   doc.save(fileName)
 }

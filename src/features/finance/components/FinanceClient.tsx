@@ -146,7 +146,7 @@ export function FinanceClient({ cycle, initialCategories, initialTransactions, u
     })
   }, [search, activeTransactions, typeFilter])
 
-  // Daily average spend for Makanan & Transportasi
+  // Daily average spend for Makanan & Transportasi + investment tracking
   const dailyAvgStats = useMemo(() => {
     const cycleDays = Math.max(
       1,
@@ -157,8 +157,31 @@ export function FinanceClient({ cycle, initialCategories, initialTransactions, u
       expenseItems
         .filter((t) => (t.category?.name ?? "").toLowerCase().includes(keyword.toLowerCase()))
         .reduce((s, t) => s + t.amount, 0)
+
+    // Investment: any expense whose category name contains "investasi" / "invest"
+    const investasi = expenseItems
+      .filter((t) => /invest/i.test(t.category?.name ?? ""))
+      .reduce((s, t) => s + t.amount, 0)
+
+    // Highest food spending day
+    const makananByDay = new Map<string, { date: string; total: number }>()
+    expenseItems
+      .filter((t) => (t.category?.name ?? "").toLowerCase().includes("makanan"))
+      .forEach((t) => {
+        const prev = makananByDay.get(t.transaction_date)
+        makananByDay.set(t.transaction_date, {
+          date: t.transaction_date,
+          total: (prev?.total ?? 0) + t.amount,
+        })
+      })
+    const highestMakananDay = makananByDay.size
+      ? [...makananByDay.values()].sort((a, b) => b.total - a.total)[0]
+      : null
+
     return {
       cycleDays,
+      highestMakananDay,
+      investasi,
       makanan: sumCategory("makanan"),
       transportasi: sumCategory("transportasi"),
     }
@@ -397,26 +420,53 @@ export function FinanceClient({ cycle, initialCategories, initialTransactions, u
         />
         <FinanceStatCard
           icon={ArrowDownLeft}
-          label="Pengeluaran"
-          value={formatCompact(activeSummary.expense)}
+          label="Pengeluaran Riil"
+          value={formatCompact(activeSummary.expense - dailyAvgStats.investasi)}
           tone="expense"
-          sub="Siklus aktif"
+          sub={dailyAvgStats.investasi > 0 ? "Excl. investasi" : "Siklus aktif"}
         />
         <FinanceStatCard
           icon={PiggyBank}
-          label="Surplus"
-          value={formatCompact(activeSummary.surplus)}
-          tone={activeSummary.surplus >= 0 ? "income" : "expense"}
-          sub={activeSummary.surplus >= 0 ? "Masih positif" : "Defisit"}
+          label="Surplus / Savings"
+          value={formatCompact(activeSummary.income - (activeSummary.expense - dailyAvgStats.investasi))}
+          tone={(activeSummary.income - (activeSummary.expense - dailyAvgStats.investasi)) >= 0 ? "income" : "expense"}
+          sub={`${activeSummary.income > 0 ? (((activeSummary.income - (activeSummary.expense - dailyAvgStats.investasi)) / activeSummary.income) * 100).toFixed(1) : "0"}% savings rate`}
         />
         <FinanceStatCard
           icon={Percent}
           label="Savings Rate"
-          value={`${activeSummary.savingsRate.toFixed(1)}%`}
+          value={`${activeSummary.income > 0 ? (((activeSummary.income - (activeSummary.expense - dailyAvgStats.investasi)) / activeSummary.income) * 100).toFixed(1) : "0"}%`}
           tone="neutral"
-          sub="Surplus / pemasukan"
+          sub="Surplus ÷ pemasukan"
         />
       </div>
+
+      {/* Investment & Liquid breakdown — only shown when investment transactions exist */}
+      {dailyAvgStats.investasi > 0 && (() => {
+        const trueSurplus = activeSummary.income - (activeSummary.expense - dailyAvgStats.investasi)
+        const liquid = trueSurplus - dailyAvgStats.investasi
+        return (
+          <div className="grid gap-3 sm:grid-cols-3">
+            <div className="rounded-xl border border-indigo-500/20 bg-indigo-500/5 p-4">
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-indigo-400">Surplus (sebelum invest)</p>
+              <p className="mt-1 text-2xl font-extrabold text-indigo-300">{formatCompact(trueSurplus)}</p>
+              <p className="mt-1 text-xs text-slate-400">Pemasukan − pengeluaran riil</p>
+            </div>
+            <div className="rounded-xl border border-purple-500/20 bg-purple-500/5 p-4">
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-purple-400">Dialokasikan ke Investasi</p>
+              <p className="mt-1 text-2xl font-extrabold text-purple-300">{formatCompact(dailyAvgStats.investasi)}</p>
+              <p className="mt-1 text-xs text-slate-400">
+                {activeSummary.income > 0 ? ((dailyAvgStats.investasi / activeSummary.income) * 100).toFixed(1) : 0}% dari pemasukan
+              </p>
+            </div>
+            <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-4">
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-emerald-400">Kas Likuid (di tangan)</p>
+              <p className={`mt-1 text-2xl font-extrabold ${liquid >= 0 ? "text-emerald-300" : "text-rose-400"}`}>{formatCompact(liquid)}</p>
+              <p className="mt-1 text-xs text-slate-400">Surplus − investasi</p>
+            </div>
+          </div>
+        )
+      })()}
 
       <div className="grid gap-4 xl:grid-cols-[1fr_360px]">
         <div className="rounded-xl border bg-card p-5">
@@ -494,6 +544,7 @@ export function FinanceClient({ cycle, initialCategories, initialTransactions, u
       {/* Daily average spending for essential categories */}
       <DailyEssentialCard
         cycleDays={dailyAvgStats.cycleDays}
+        highestMakananDay={dailyAvgStats.highestMakananDay}
         makanan={dailyAvgStats.makanan}
         transportasi={dailyAvgStats.transportasi}
         cycleLabel={cycleLabel}
@@ -670,11 +721,13 @@ export function FinanceClient({ cycle, initialCategories, initialTransactions, u
 function DailyEssentialCard({
   cycleDays,
   cycleLabel,
+  highestMakananDay,
   makanan,
   transportasi,
 }: {
   cycleDays: number
   cycleLabel: string
+  highestMakananDay: { date: string; total: number } | null
   makanan: number
   transportasi: number
 }) {
@@ -794,13 +847,32 @@ function DailyEssentialCard({
             ))}
           </div>
 
-          {/* Combined total row */}
-          <div className="mt-4 flex items-center justify-between rounded-xl border border-[#1e2235] bg-[#0f1117] px-4 py-3">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Total Kebutuhan Pokok / Hari</p>
-              <p className="mt-0.5 text-[13px] text-slate-400">Makanan + Transportasi</p>
+          {/* Combined total + highest food day */}
+          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+            <div className="flex items-center justify-between rounded-xl border border-[#1e2235] bg-[#0f1117] px-4 py-3">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Total Kebutuhan Pokok / Hari</p>
+                <p className="mt-0.5 text-[13px] text-slate-400">Makanan + Transportasi</p>
+              </div>
+              <p className="text-xl font-extrabold text-white">{formatCompact(avgMakanan + avgTransportasi)}</p>
             </div>
-            <p className="text-xl font-extrabold text-white">{formatCompact(avgMakanan + avgTransportasi)}</p>
+
+            {highestMakananDay && (
+              <div className="rounded-xl border border-rose-500/20 bg-rose-500/5 px-4 py-3">
+                <div className="flex items-center gap-1.5 mb-1">
+                  <span className="text-xs font-semibold uppercase tracking-wide text-rose-400">Hari Makan Tertinggi</span>
+                  <span className="text-[10px] rounded-full bg-rose-500/20 text-rose-300 px-1.5 py-0.5 font-bold">!</span>
+                </div>
+                <p className="text-lg font-extrabold text-rose-300">{formatCompact(highestMakananDay.total)}</p>
+                <p className="text-[12px] text-slate-400 mt-0.5">
+                  {new Date(`${highestMakananDay.date}T00:00:00`).toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "short" })}
+                  {" — "}
+                  <span className="text-slate-300 font-medium">
+                    {((highestMakananDay.total / makanan) * 100).toFixed(0)}% dari total makan
+                  </span>
+                </p>
+              </div>
+            )}
           </div>
         </>
       ) : (
