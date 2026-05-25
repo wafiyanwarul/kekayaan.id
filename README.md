@@ -144,4 +144,4 @@ Timeline keuangan berjalan dari tanggal **25** suatu bulan sampai **24** bulan b
 
 ## 📜 Lisensi
 
-Private project — © 2026 kekayaan.id
+Wafiy Anwarul Hikam — © 2026 kekayaan.id
