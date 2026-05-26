@@ -67,12 +67,12 @@ model Goal {
 }
 
 model TransactionCategory {
-  id     String @id @default(uuid())
-  userId String @map("user_id")
+  id     String  @id @default(uuid())
+  userId String? @map("user_id")
   name   String
-  type   String // 'income' | 'expense'
+  type   String  // 'income' | 'expense'
 
-  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user         User?         @relation(fields: [userId], references: [id], onDelete: Cascade)
   transactions Transaction[]
 
   @@map("transaction_categories")
@@ -105,3 +105,27 @@ model MonthlyCycle {
 
   @@map("monthly_cycles")
 }
+
+model UserRole {
+  userId    String   @id @map("user_id")
+  email     String
+  role      String   // 'user' | 'admin' | 'super_admin'
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("user_roles")
+}
+
+model RoleChangeRequest {
+  id            String   @id @default(uuid())
+  requestedBy   String   @map("requested_by")
+  userId        String   @map("user_id")
+  requestedRole String   @map("requested_role") // 'admin' | 'super_admin'
+  status        String   // 'pending' | 'approved' | 'rejected'
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  @@unique([userId, status])
+  @@map("role_change_requests")
+}
+

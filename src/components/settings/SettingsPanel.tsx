@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useMemo } from "react"
 import {
   AlertTriangle,
   CheckCircle2,
@@ -11,6 +11,17 @@ import {
   Loader2,
   ShieldCheck,
   Wrench,
+  Plus,
+  Trash2,
+  UserPlus,
+  Shield,
+  Clock,
+  Check,
+  X,
+  AlertCircle,
+  Search,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react"
 import { useAppPreferences } from "@/components/providers/AppPreferencesProvider"
 import { cn } from "@/lib/utils"
@@ -19,32 +30,369 @@ import { createClient } from "@/lib/supabase/client"
 const MAINTENANCE_KEY = "kekayaan-id-maintenance-mode"
 const UPGRADE_KEY = "kekayaan-id-upgrading-system"
 
+interface UserRoleData {
+  user_id: string
+  email: string
+  role: string
+  created_at: string
+}
+
+interface CategoryData {
+  id: string
+  name: string
+  type: "income" | "expense"
+  user_id: string | null
+}
+
+interface RoleChangeRequest {
+  id: string
+  requested_by: string
+  user_id: string
+  requested_role: string
+  status: "pending" | "approved" | "rejected"
+  created_at: string
+}
+
 export function SettingsPanel() {
   const { t } = useAppPreferences()
+  const [currentUser, setCurrentUser] = useState<any>(null)
+  const [userRole, setUserRole] = useState<string>("user")
+  const [loadingRole, setLoadingRole] = useState(true)
+
+  // System settings states
   const [maintenanceMode, setMaintenanceMode] = useState(false)
   const [upgradingSystem, setUpgradingSystem] = useState(false)
+  const [showWarningModal, setShowWarningModal] = useState(false)
+  const [pendingToggleType, setPendingToggleType] = useState<"maintenance" | "upgrade" | null>(null)
+  const [pendingToggleValue, setPendingToggleValue] = useState<boolean>(false)
 
+  // Categories management states
+  const [categories, setCategories] = useState<CategoryData[]>([])
+  const [newCatName, setNewCatName] = useState("")
+  const [newCatType, setNewCatType] = useState<"income" | "expense">("expense")
+  const [loadingCategories, setLoadingCategories] = useState(false)
+  const [catActionLoading, setCatActionLoading] = useState<string | null>(null)
+
+  // Master Users management states
+  const [users, setUsers] = useState<UserRoleData[]>([])
+  const [roleRequests, setRoleRequests] = useState<RoleChangeRequest[]>([])
+  const [loadingUsers, setLoadingUsers] = useState(false)
+  const [userActionLoading, setUserActionLoading] = useState<string | null>(null)
+
+  // User search & pagination states
+  const [searchTerm, setSearchTerm] = useState("")
+  const [currentPage, setCurrentPage] = useState(1)
+  const itemsPerPage = 20
+
+  // Custom alert & confirmation modals states
+  const [successModal, setSuccessModal] = useState<{ title: string; message: string } | null>(null)
+  const [errorModal, setErrorModal] = useState<{ title: string; message: string } | null>(null)
+  const [showAddCatConfirm, setShowAddCatConfirm] = useState(false)
+  const [showDeleteCatConfirm, setShowDeleteCatConfirm] = useState<{ id: string; name: string } | null>(null)
+  const [showRoleChangeConfirm, setShowRoleChangeConfirm] = useState<{ userId: string; email: string; role: string } | null>(null)
+  const [showApprovalConfirm, setShowApprovalConfirm] = useState<{ requestId: string; email: string; decision: "approved" | "rejected" } | null>(null)
+
+  const supabase = createClient()
+
+  // Fetch current user and their role on mount
   useEffect(() => {
+    async function initUser() {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) {
+        setCurrentUser(user)
+        const { data } = await supabase
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", user.id)
+          .maybeSingle()
+        if (data) {
+          setUserRole(data.role)
+        }
+      }
+      setLoadingRole(false)
+    }
+
+    initUser()
     setMaintenanceMode(localStorage.getItem(MAINTENANCE_KEY) === "true")
     setUpgradingSystem(localStorage.getItem(UPGRADE_KEY) === "true")
   }, [])
 
-  function toggleMaintenance(value: boolean) {
-    setMaintenanceMode(value)
-    localStorage.setItem(MAINTENANCE_KEY, String(value))
+  // Fetch lists for Admin/Super Admin
+  useEffect(() => {
+    if (userRole === "admin" || userRole === "super_admin") {
+      fetchCategories()
+      fetchUsersAndRequests()
+    }
+  }, [userRole])
+
+  async function fetchCategories() {
+    setLoadingCategories(true)
+    const { data, error } = await supabase
+      .from("transaction_categories")
+      .select("*")
+      .order("name", { ascending: true })
+    
+    if (!error && data) {
+      setCategories(data)
+    }
+    setLoadingCategories(false)
   }
 
-  function toggleUpgrade(value: boolean) {
-    setUpgradingSystem(value)
-    localStorage.setItem(UPGRADE_KEY, String(value))
+  async function fetchUsersAndRequests() {
+    setLoadingUsers(true)
+    const [usersRes, requestsRes] = await Promise.all([
+      supabase.from("user_roles").select("*"),
+      supabase.from("role_change_requests").select("*")
+    ])
+
+    if (!usersRes.error && usersRes.data) {
+      setUsers(usersRes.data)
+    }
+    if (!requestsRes.error && requestsRes.data) {
+      setRoleRequests(requestsRes.data)
+    }
+    setLoadingUsers(false)
   }
+
+  // Categories split (income/expense)
+  const incomeCategories = useMemo(
+    () => categories.filter(c => c.type === "income"),
+    [categories]
+  )
+
+  const expenseCategories = useMemo(
+    () => categories.filter(c => c.type === "expense"),
+    [categories]
+  )
+
+  // User search, sorting & pagination memo
+  const filteredAndSortedUsers = useMemo(() => {
+    const rolePriority: Record<string, number> = {
+      super_admin: 1,
+      admin: 2,
+      user: 3
+    }
+
+    // First filter by search term
+    const filtered = users.filter(u => 
+      u.email.toLowerCase().includes(searchTerm.toLowerCase())
+    )
+
+    // Then sort by role priority, and then email alphabetically
+    return filtered.sort((a, b) => {
+      const priorityA = rolePriority[a.role] || 99
+      const priorityB = rolePriority[b.role] || 99
+      if (priorityA !== priorityB) {
+        return priorityA - priorityB
+      }
+      return a.email.localeCompare(b.email)
+    })
+  }, [users, searchTerm])
+
+  const totalPages = Math.ceil(filteredAndSortedUsers.length / itemsPerPage)
+  
+  const paginatedUsers = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage
+    return filteredAndSortedUsers.slice(startIndex, startIndex + itemsPerPage)
+  }, [filteredAndSortedUsers, currentPage])
+
+  // Reset page when search term changes
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [searchTerm])
+
+  // System settings triggers
+  function handleToggleClick(type: "maintenance" | "upgrade", currentValue: boolean) {
+    setPendingToggleType(type)
+    setPendingToggleValue(!currentValue)
+    setShowWarningModal(true)
+  }
+
+  function confirmToggleChange() {
+    if (pendingToggleType === "maintenance") {
+      setMaintenanceMode(pendingToggleValue)
+      localStorage.setItem(MAINTENANCE_KEY, String(pendingToggleValue))
+      setSuccessModal({
+        title: "Pemeliharaan Diperbarui",
+        message: `Maintenance Mode berhasil diubah menjadi ${pendingToggleValue ? "AKTIF" : "NONAKTIF"} secara lokal.`
+      })
+    } else if (pendingToggleType === "upgrade") {
+      setUpgradingSystem(pendingToggleValue)
+      localStorage.setItem(UPGRADE_KEY, String(pendingToggleValue))
+      setSuccessModal({
+        title: "Peningkatan Diperbarui",
+        message: `Upgrading System berhasil diubah menjadi ${pendingToggleValue ? "AKTIF" : "NONAKTIF"} secara lokal.`
+      })
+    }
+    setShowWarningModal(false)
+    setPendingToggleType(null)
+  }
+
+  // Categories handlers
+  function triggerAddCategory(e: React.FormEvent) {
+    e.preventDefault()
+    if (!newCatName.trim()) return
+    setShowAddCatConfirm(true)
+  }
+
+  async function confirmAddCategory() {
+    setShowAddCatConfirm(false)
+    setCatActionLoading("add")
+
+    const { error } = await supabase
+      .from("transaction_categories")
+      .insert({
+        name: newCatName.trim(),
+        type: newCatType,
+        user_id: null
+      })
+
+    if (error) {
+      setErrorModal({ title: "Gagal Menambah Kategori", message: error.message })
+    } else {
+      setSuccessModal({
+        title: "Kategori Ditambahkan",
+        message: `Kategori global "${newCatName.trim()}" (${newCatType === "income" ? "Pemasukan" : "Pengeluaran"}) berhasil dibuat.`
+      })
+      setNewCatName("")
+      fetchCategories()
+    }
+    setCatActionLoading(null)
+  }
+
+  async function confirmDeleteCategory() {
+    if (!showDeleteCatConfirm) return
+    const { id, name } = showDeleteCatConfirm
+    setShowDeleteCatConfirm(null)
+    setCatActionLoading(`delete-${id}`)
+
+    const { error } = await supabase
+      .from("transaction_categories")
+      .delete()
+      .eq("id", id)
+
+    if (error) {
+      setErrorModal({
+        title: "Gagal Menghapus Kategori",
+        message: `Kategori "${name}" tidak bisa dihapus. Kemungkinan karena kategori ini masih direferensikan oleh data transaksi aktif. Detail: ${error.message}`
+      })
+    } else {
+      setSuccessModal({
+        title: "Kategori Dihapus",
+        message: `Kategori global "${name}" berhasil dihapus dari sistem.`
+      })
+      fetchCategories()
+    }
+    setCatActionLoading(null)
+  }
+
+  // Users & Roles handlers
+  async function confirmSuperAdminChangeRole() {
+    if (!showRoleChangeConfirm) return
+    const { userId, email, role } = showRoleChangeConfirm
+    setShowRoleChangeConfirm(null)
+    setUserActionLoading(userId)
+
+    const { error } = await supabase
+      .from("user_roles")
+      .update({ role })
+      .eq("user_id", userId)
+
+    if (error) {
+      setErrorModal({ title: "Gagal Mengubah Role", message: error.message })
+    } else {
+      setSuccessModal({
+        title: "Role Diperbarui",
+        message: `Role untuk ${email} berhasil diubah menjadi ${role.toUpperCase()}.`
+      })
+      fetchUsersAndRequests()
+    }
+    setUserActionLoading(null)
+  }
+
+  async function handleAdminRequestPromotion(targetUserId: string, targetEmail: string) {
+    setUserActionLoading(targetUserId)
+    const existing = roleRequests.find(r => r.user_id === targetUserId && r.status === "pending")
+    if (existing) {
+      setErrorModal({
+        title: "Pengajuan Ganda",
+        message: `Pengangkatan role untuk ${targetEmail} saat ini sedang berstatus pending menunggu persetujuan.`
+      })
+      setUserActionLoading(null)
+      return
+    }
+
+    const { error } = await supabase
+      .from("role_change_requests")
+      .insert({
+        requested_by: currentUser.id,
+        user_id: targetUserId,
+        requested_role: "admin",
+        status: "pending"
+      })
+
+    if (error) {
+      setErrorModal({ title: "Gagal Mengajukan Role", message: error.message })
+    } else {
+      setSuccessModal({
+        title: "Pengajuan Dikirim",
+        message: `Permintaan promosi ${targetEmail} menjadi ADMIN telah berhasil diajukan ke Super Admin.`
+      })
+      fetchUsersAndRequests()
+    }
+    setUserActionLoading(null)
+  }
+
+  async function confirmProcessApproval() {
+    if (!showApprovalConfirm) return
+    const { requestId, email, decision } = showApprovalConfirm
+    setShowApprovalConfirm(null)
+    setUserActionLoading(`approve-${requestId}`)
+
+    const { error } = await supabase
+      .from("role_change_requests")
+      .update({ status: decision })
+      .eq("id", requestId)
+
+    if (error) {
+      setErrorModal({ title: "Gagal Memproses Approval", message: error.message })
+    } else {
+      setSuccessModal({
+        title: decision === "approved" ? "Pengajuan Disetujui" : "Pengajuan Ditolak",
+        message: `Permintaan pengangkatan role untuk ${email} telah berhasil ${decision === "approved" ? "DISETUJUI (Sekarang menjadi ADMIN)" : "DITOLAK"}.`
+      })
+      fetchUsersAndRequests()
+    }
+    setUserActionLoading(null)
+  }
+
+  if (loadingRole) {
+    return (
+      <div className="flex h-64 items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    )
+  }
+
+  const isAdminOrSuper = userRole === "admin" || userRole === "super_admin"
 
   return (
     <div className="space-y-6">
+      {/* ── Header ────────────────────────────────────────────────────────── */}
       <section className="rounded-xl border bg-card p-6">
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{t("settings.subtitle")}</p>
+            <div className="flex items-center gap-2">
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{t("settings.subtitle")}</p>
+              {isAdminOrSuper && (
+                <span className={cn(
+                  "rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider",
+                  userRole === "super_admin" ? "bg-red-500/15 text-red-400 ring-1 ring-red-500/25" : "bg-indigo-500/15 text-indigo-400 ring-1 ring-indigo-500/25"
+                )}>
+                  {userRole}
+                </span>
+              )}
+            </div>
             <h2 className="mt-1 text-2xl font-bold text-white">{t("settings.title")}</h2>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">{t("settings.copy")}</p>
           </div>
@@ -54,41 +402,647 @@ export function SettingsPanel() {
         </div>
       </section>
 
-      {/* Change Password Section */}
+      {/* ── Change Password (Everyone) ────────────────────────────────────── */}
       <ChangePasswordCard />
 
-      <div className="grid gap-4 xl:grid-cols-2">
-        <SettingToggleCard
-          checked={maintenanceMode}
-          description="Prepare a future SaaS-wide maintenance gate so deployments, migrations, and urgent fixes can happen with clearer user messaging."
-          icon={Wrench}
-          label={t("settings.maintenance")}
-          onChange={toggleMaintenance}
-          statusText={maintenanceMode ? t("settings.maintenanceOn") : t("settings.available")}
-          tone="warning"
-        />
-        <SettingToggleCard
-          checked={upgradingSystem}
-          description="Mark the app as undergoing an upgrade. In the future, this can integrate with deployment pipelines and server-side release guards."
-          icon={ShieldCheck}
-          label={t("settings.upgrading")}
-          onChange={toggleUpgrade}
-          statusText={upgradingSystem ? t("settings.upgradeOn") : t("settings.noUpgrade")}
-          tone="info"
-        />
-      </div>
-
-      <section className="rounded-xl border bg-card p-5">
-        <div className="flex items-start gap-3">
-          <div className="rounded-lg bg-amber-500/15 p-2 text-amber-300">
-            <AlertTriangle className="h-5 w-5" />
+      {/* ── Admin & Super Admin Sections ──────────────────────────────────── */}
+      {isAdminOrSuper && (
+        <>
+          {/* Maintenance / Upgrading System toggles */}
+          <div className="grid gap-4 xl:grid-cols-2">
+            <SettingToggleCard
+              checked={maintenanceMode}
+              description="Mengaktifkan gerbang pemeliharaan sistem sehingga pengguna biasa tidak dapat mengakses aplikasi selama ada pembaruan database atau server."
+              icon={Wrench}
+              label={t("settings.maintenance")}
+              onChange={() => handleToggleClick("maintenance", maintenanceMode)}
+              statusText={maintenanceMode ? t("settings.maintenanceOn") : t("settings.available")}
+              tone="warning"
+            />
+            <SettingToggleCard
+              checked={upgradingSystem}
+              description="Menandai sistem sedang ditingkatkan kapasitasnya. Digunakan untuk integrasi deployment pipelining di masa mendatang."
+              icon={ShieldCheck}
+              label={t("settings.upgrading")}
+              onChange={() => handleToggleClick("upgrade", upgradingSystem)}
+              statusText={upgradingSystem ? t("settings.upgradeOn") : t("settings.noUpgrade")}
+              tone="info"
+            />
           </div>
-          <div>
-            <h3 className="text-sm font-semibold text-white">{t("settings.note")}</h3>
-            <p className="mt-1 text-sm leading-6 text-muted-foreground">{t("settings.noteCopy")}</p>
+
+          {/* Pending Approvals Panel (Super Admin only) */}
+          {userRole === "super_admin" && (
+            <section className="rounded-xl border bg-card p-6">
+              <div className="flex items-center gap-3 mb-5">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500/15 text-amber-400">
+                  <UserPlus className="h-5 w-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-white">Permintaan Persetujuan Role (Admin)</h3>
+                  <p className="text-sm text-muted-foreground">Proses permintaan promosi admin baru dari admin lain</p>
+                </div>
+              </div>
+
+              {roleRequests.filter(r => r.status === "pending").length === 0 ? (
+                <p className="text-sm text-slate-400">Tidak ada permintaan persetujuan aktif saat ini.</p>
+              ) : (
+                <div className="space-y-3">
+                  {roleRequests
+                    .filter(r => r.status === "pending")
+                    .map(request => {
+                      const targetUser = users.find(u => u.user_id === request.user_id)
+                      const requester = users.find(u => u.user_id === request.requested_by)
+                      return (
+                        <div key={request.id} className="flex flex-col gap-3 rounded-lg border border-[#1e2235] bg-[#0f1117] p-4 sm:flex-row sm:items-center sm:justify-between">
+                          <div>
+                            <p className="text-sm font-semibold text-white">Target User: {targetUser?.email || "Unknown"}</p>
+                            <p className="text-xs text-muted-foreground">Diajukan oleh: {requester?.email || "Unknown"} pada {new Date(request.created_at).toLocaleDateString()}</p>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => setShowApprovalConfirm({ requestId: request.id, email: targetUser?.email || "", decision: "approved" })}
+                              disabled={userActionLoading === `approve-${request.id}`}
+                              className="inline-flex items-center gap-1 rounded bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-500 transition disabled:opacity-50 cursor-pointer"
+                            >
+                              <Check className="h-3 w-3" /> Setujui
+                            </button>
+                            <button
+                              onClick={() => setShowApprovalConfirm({ requestId: request.id, email: targetUser?.email || "", decision: "rejected" })}
+                              disabled={userActionLoading === `approve-${request.id}`}
+                              className="inline-flex items-center gap-1 rounded bg-red-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-red-500 transition disabled:opacity-50 cursor-pointer"
+                            >
+                              <X className="h-3 w-3" /> Tolak
+                            </button>
+                          </div>
+                        </div>
+                      )
+                    })}
+                </div>
+              )}
+            </section>
+          )}
+
+          {/* Categories Management Panel (Left / Right Table dual view) */}
+          <section className="rounded-xl border bg-card p-6">
+            <div className="flex items-center gap-3 mb-5">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-purple-500/15 text-purple-400">
+                <Plus className="h-5 w-5" />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-white">Manajemen Kategori Finansial</h3>
+                <p className="text-sm text-muted-foreground">Kelola kategori default global yang dapat diakses oleh seluruh pengguna</p>
+              </div>
+            </div>
+
+            {/* Add Category Form */}
+            <form onSubmit={triggerAddCategory} className="mb-6 flex flex-col gap-3 sm:flex-row">
+              <input
+                type="text"
+                placeholder="Nama kategori baru"
+                value={newCatName}
+                onChange={e => setNewCatName(e.target.value)}
+                required
+                className="flex-1 px-4 py-2.5 rounded-lg bg-[#0f1117] border border-[#1e2235] text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm"
+              />
+              <select
+                value={newCatType}
+                onChange={e => setNewCatType(e.target.value as "income" | "expense")}
+                className="px-4 py-2.5 rounded-lg bg-[#0f1117] border border-[#1e2235] text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm"
+              >
+                <option value="expense">Pengeluaran (Expense)</option>
+                <option value="income">Pemasukan (Income)</option>
+              </select>
+              <button
+                type="submit"
+                disabled={catActionLoading === "add"}
+                className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-indigo-500 disabled:opacity-50 cursor-pointer"
+              >
+                {catActionLoading === "add" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+                Tambah Global
+              </button>
+            </form>
+
+            {loadingCategories ? (
+              <div className="flex justify-center p-4">
+                <Loader2 className="h-6 w-6 animate-spin text-slate-500" />
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Left Table: Income Categories */}
+                <div className="rounded-lg border border-[#1e2235] bg-[#0b0c10] overflow-hidden">
+                  <div className="bg-[#0f1117] px-4 py-3 border-b border-[#1e2235]">
+                    <h4 className="font-bold text-white text-sm">Kategori Pemasukan (Income)</h4>
+                  </div>
+                  <div className="overflow-x-auto">
+                    <table className="w-full border-collapse text-left text-sm text-slate-300">
+                      <thead className="bg-[#0f1117]/50 text-xs font-semibold uppercase tracking-wider text-slate-400 border-b border-[#1e2235]">
+                        <tr>
+                          <th className="px-4 py-2 w-12 text-center">No</th>
+                          <th className="px-4 py-2">Nama</th>
+                          <th className="px-4 py-2">Tipe</th>
+                          <th className="px-4 py-2 text-right">Aksi</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-[#1e2235] bg-[#0b0c10]">
+                        {incomeCategories.length === 0 ? (
+                          <tr>
+                            <td colSpan={4} className="px-4 py-3 text-center text-slate-500 text-xs">Tidak ada kategori.</td>
+                          </tr>
+                        ) : (
+                          incomeCategories.map((cat, idx) => (
+                            <tr key={cat.id} className="hover:bg-[#131622] transition-colors">
+                              <td className="px-4 py-2 text-center text-slate-500 text-xs">{idx + 1}</td>
+                              <td className="px-4 py-2 font-semibold text-white">{cat.name}</td>
+                              <td className="px-4 py-2">
+                                <span className={cn(
+                                  "rounded px-1.5 py-0.5 text-[9px] font-bold uppercase",
+                                  cat.user_id === null ? "bg-indigo-500/15 text-indigo-400" : "bg-purple-500/15 text-purple-400"
+                                )}>
+                                  {cat.user_id === null ? "Global" : "Kustom"}
+                                </span>
+                              </td>
+                              <td className="px-4 py-2 text-right">
+                                {userRole === "super_admin" ? (
+                                  <button
+                                    onClick={() => setShowDeleteCatConfirm({ id: cat.id, name: cat.name })}
+                                    disabled={catActionLoading === `delete-${cat.id}`}
+                                    className="rounded p-1 text-slate-400 hover:bg-rose-500/15 hover:text-rose-400 transition cursor-pointer disabled:opacity-50"
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </button>
+                                ) : (
+                                  <span className="text-[10px] text-muted-foreground/50 italic">Hapus (Super)</span>
+                                )}
+                              </td>
+                            </tr>
+                          ))
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                {/* Right Table: Expense Categories */}
+                <div className="rounded-lg border border-[#1e2235] bg-[#0b0c10] overflow-hidden">
+                  <div className="bg-[#0f1117] px-4 py-3 border-b border-[#1e2235]">
+                    <h4 className="font-bold text-white text-sm">Kategori Pengeluaran (Expense)</h4>
+                  </div>
+                  <div className="overflow-x-auto">
+                    <table className="w-full border-collapse text-left text-sm text-slate-300">
+                      <thead className="bg-[#0f1117]/50 text-xs font-semibold uppercase tracking-wider text-slate-400 border-b border-[#1e2235]">
+                        <tr>
+                          <th className="px-4 py-2 w-12 text-center">No</th>
+                          <th className="px-4 py-2">Nama</th>
+                          <th className="px-4 py-2">Tipe</th>
+                          <th className="px-4 py-2 text-right">Aksi</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-[#1e2235] bg-[#0b0c10]">
+                        {expenseCategories.length === 0 ? (
+                          <tr>
+                            <td colSpan={4} className="px-4 py-3 text-center text-slate-500 text-xs">Tidak ada kategori.</td>
+                          </tr>
+                        ) : (
+                          expenseCategories.map((cat, idx) => (
+                            <tr key={cat.id} className="hover:bg-[#131622] transition-colors">
+                              <td className="px-4 py-2 text-center text-slate-500 text-xs">{idx + 1}</td>
+                              <td className="px-4 py-2 font-semibold text-white">{cat.name}</td>
+                              <td className="px-4 py-2">
+                                <span className={cn(
+                                  "rounded px-1.5 py-0.5 text-[9px] font-bold uppercase",
+                                  cat.user_id === null ? "bg-indigo-500/15 text-indigo-400" : "bg-purple-500/15 text-purple-400"
+                                )}>
+                                  {cat.user_id === null ? "Global" : "Kustom"}
+                                </span>
+                              </td>
+                              <td className="px-4 py-2 text-right">
+                                {userRole === "super_admin" ? (
+                                  <button
+                                    onClick={() => setShowDeleteCatConfirm({ id: cat.id, name: cat.name })}
+                                    disabled={catActionLoading === `delete-${cat.id}`}
+                                    className="rounded p-1 text-slate-400 hover:bg-rose-500/15 hover:text-rose-400 transition cursor-pointer disabled:opacity-50"
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </button>
+                                ) : (
+                                  <span className="text-[10px] text-muted-foreground/50 italic">Hapus (Super)</span>
+                                )}
+                              </td>
+                            </tr>
+                          ))
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            )}
+          </section>
+
+          {/* Master Users Data Table with Search and Pagination */}
+          <section className="rounded-xl border bg-card p-6">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-5">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-500/15 text-indigo-400">
+                  <Shield className="h-5 w-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-white">Master Data User</h3>
+                  <p className="text-sm text-muted-foreground">Lihat dan atur level hak akses pengguna aplikasi</p>
+                </div>
+              </div>
+
+              {/* Search Field */}
+              <div className="relative w-full sm:w-64">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
+                <input
+                  type="text"
+                  placeholder="Cari email user..."
+                  value={searchTerm}
+                  onChange={e => setSearchTerm(e.target.value)}
+                  className="w-full pl-9 pr-4 py-2 rounded-lg bg-[#0f1117] border border-[#1e2235] text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-xs"
+                />
+              </div>
+            </div>
+
+            {loadingUsers ? (
+              <div className="flex justify-center p-4">
+                <Loader2 className="h-6 w-6 animate-spin text-slate-500" />
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="overflow-x-auto rounded-lg border border-[#1e2235]">
+                  <table className="w-full border-collapse text-left text-sm text-slate-300">
+                    <thead className="bg-[#0f1117] text-xs font-semibold uppercase tracking-wider text-slate-400 border-b border-[#1e2235]">
+                      <tr>
+                        <th className="px-4 py-3 w-12 text-center">No</th>
+                        <th className="px-4 py-3">Email</th>
+                        <th className="px-4 py-3">Role</th>
+                        <th className="px-4 py-3">Terdaftar Sejak</th>
+                        <th className="px-4 py-3 text-right">Aksi</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-[#1e2235] bg-[#0b0c10]">
+                      {paginatedUsers.length === 0 ? (
+                        <tr>
+                          <td colSpan={5} className="px-4 py-6 text-center text-slate-500">Tidak ada user ditemukan.</td>
+                        </tr>
+                      ) : (
+                        paginatedUsers.map((user, idx) => {
+                          const number = (currentPage - 1) * itemsPerPage + idx + 1
+                          const request = roleRequests.find(r => r.user_id === user.user_id && r.status === "pending")
+                          return (
+                            <tr key={user.user_id} className="hover:bg-[#131622] transition-colors">
+                              <td className="px-4 py-3 text-center text-slate-500 text-xs">{number}</td>
+                              <td className="px-4 py-3 font-medium text-white">{user.email}</td>
+                              <td className="px-4 py-3">
+                                <span className={cn(
+                                  "rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider",
+                                  user.role === "super_admin"
+                                    ? "bg-red-500/15 text-red-400 ring-1 ring-red-500/25"
+                                    : user.role === "admin"
+                                    ? "bg-indigo-500/15 text-indigo-400 ring-1 ring-indigo-500/25"
+                                    : "bg-slate-500/15 text-slate-400 ring-1 ring-slate-500/25"
+                                )}>
+                                  {user.role}
+                                </span>
+                              </td>
+                              <td className="px-4 py-3 text-slate-400 text-xs">{new Date(user.created_at).toLocaleDateString()}</td>
+                              <td className="px-4 py-3 text-right">
+                                {user.user_id === currentUser?.id ? (
+                                  <span className="text-xs text-muted-foreground/60 italic">Akun Anda</span>
+                                ) : userRole === "super_admin" ? (
+                                  <select
+                                    value={user.role}
+                                    disabled={userActionLoading === user.user_id}
+                                    onChange={e => setShowRoleChangeConfirm({ userId: user.user_id, email: user.email, role: e.target.value })}
+                                    className="px-2 py-1 rounded bg-[#0f1117] border border-[#1e2235] text-white text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500 cursor-pointer"
+                                  >
+                                    <option value="user">User</option>
+                                    <option value="admin">Admin</option>
+                                    <option value="super_admin">Super Admin</option>
+                                  </select>
+                                ) : user.role === "user" ? (
+                                  request ? (
+                                    <span className="inline-flex items-center gap-1 text-xs text-amber-400">
+                                      <Clock className="h-3 w-3" /> Pending
+                                    </span>
+                                  ) : (
+                                    <button
+                                      onClick={() => handleAdminRequestPromotion(user.user_id, user.email)}
+                                      disabled={userActionLoading === user.user_id}
+                                      className="inline-flex items-center gap-1 rounded bg-indigo-600/20 px-2.5 py-1 text-xs font-semibold text-indigo-400 border border-indigo-500/30 hover:bg-indigo-600 hover:text-white transition disabled:opacity-50 cursor-pointer"
+                                    >
+                                      Ajukan Jadi Admin
+                                    </button>
+                                  )
+                                ) : (
+                                  <span className="text-xs text-muted-foreground/60">Tidak ada aksi</span>
+                                )}
+                              </td>
+                            </tr>
+                          )
+                        })
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Pagination Controls */}
+                {totalPages > 1 && (
+                  <div className="flex items-center justify-between border-t border-[#1e2235] pt-4">
+                    <p className="text-xs text-slate-400">
+                      Menampilkan <span className="text-white font-semibold">{(currentPage - 1) * itemsPerPage + 1}</span> - <span className="text-white font-semibold">{Math.min(currentPage * itemsPerPage, filteredAndSortedUsers.length)}</span> dari <span className="text-white font-semibold">{filteredAndSortedUsers.length}</span> user
+                    </p>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                        disabled={currentPage === 1}
+                        className="inline-flex items-center justify-center rounded-lg border border-[#1e2235] bg-[#0f1117] p-2 text-slate-400 hover:text-white disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                      >
+                        <ChevronLeft className="h-4 w-4" />
+                      </button>
+                      <span className="text-xs text-white">
+                        Halaman {currentPage} dari {totalPages}
+                      </span>
+                      <button
+                        onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                        disabled={currentPage === totalPages}
+                        className="inline-flex items-center justify-center rounded-lg border border-[#1e2235] bg-[#0f1117] p-2 text-slate-400 hover:text-white disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                      >
+                        <ChevronRight className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </section>
+        </>
+      )}
+
+      {/* ── CUSTOM ALERT & DIALOG MODALS ────────────────────────────────────── */}
+
+      {/* SUCCESS MODAL */}
+      {successModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-md">
+          <div className="w-full max-w-md rounded-2xl border border-emerald-500/25 bg-[#0e1713] p-6 shadow-2xl animate-scale-in">
+            <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-400">
+              <Check className="h-6 w-6" />
+            </div>
+            <h3 className="text-lg font-bold text-white">{successModal.title}</h3>
+            <p className="mt-2 text-sm text-slate-300 leading-relaxed">{successModal.message}</p>
+            <div className="mt-6 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setSuccessModal(null)}
+                className="rounded-lg bg-emerald-600 hover:bg-emerald-500 transition px-5 py-2.5 text-sm font-semibold text-white cursor-pointer"
+              >
+                Selesai
+              </button>
+            </div>
           </div>
         </div>
-      </section>
+      )}
+
+      {/* ERROR MODAL */}
+      {errorModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-md">
+          <div className="w-full max-w-md rounded-2xl border border-red-500/25 bg-[#170e0e] p-6 shadow-2xl animate-scale-in">
+            <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-500/10 text-red-400">
+              <AlertCircle className="h-6 w-6" />
+            </div>
+            <h3 className="text-lg font-bold text-white">{errorModal.title}</h3>
+            <p className="mt-2 text-sm text-slate-300 leading-relaxed">{errorModal.message}</p>
+            <div className="mt-6 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setErrorModal(null)}
+                className="rounded-lg bg-red-600 hover:bg-red-500 transition px-5 py-2.5 text-sm font-semibold text-white cursor-pointer"
+              >
+                Tutup
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* WARNING MODAL FOR SYSTEM TOGGLES */}
+      {showWarningModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-md">
+          <div className="w-full max-w-lg rounded-2xl border border-red-500/30 bg-[#16131c] p-6 shadow-2xl animate-scale-in">
+            <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-500/10 text-red-500">
+              <AlertTriangle className="h-6 w-6" />
+            </div>
+            <h3 className="text-xl font-bold text-white">Danger Area: Konfirmasi Perubahan Sistem</h3>
+            <p className="mt-3 text-sm text-slate-200 leading-relaxed">
+              {pendingToggleType === "maintenance"
+                ? pendingToggleValue
+                  ? "Apakah Anda yakin ingin MENGAKTIFKAN mode pemeliharaan? Akses pengguna biasa akan segera ditangguhkan sementara dari sistem."
+                  : "Apakah Anda yakin ingin MENONAKTIFKAN mode pemeliharaan? Pastikan pemeliharaan server dan migrasi database telah selesai serta sistem kembali berjalan normal."
+                : pendingToggleValue
+                ? "Apakah Anda yakin ingin MENGAKTIFKAN mode peningkatan sistem? Beberapa fungsi server akan dinonaktifkan sementara untuk penyesuaian."
+                : "Apakah Anda yakin ingin MENONAKTIFKAN mode peningkatan sistem? Pastikan proses pembaharuan modul system/pipeline telah selesai sepenuhnya."
+              }
+            </p>
+            <div className="mt-4 rounded-lg bg-red-500/5 border border-red-500/15 p-3.5 text-xs text-red-400">
+              Perhatian: Pengaturan ini bersifat global dan mempengaruhi seluruh pengguna aplikasi kekayaan.id.
+            </div>
+            <div className="mt-6 flex items-center justify-end gap-3 border-t border-[#2a2335] pt-4">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowWarningModal(false)
+                  setPendingToggleType(null)
+                }}
+                className="rounded-lg px-5 py-2.5 text-sm font-semibold text-slate-400 hover:text-white transition cursor-pointer"
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                onClick={confirmToggleChange}
+                className="rounded-lg bg-red-600 hover:bg-red-500 transition px-6 py-2.5 text-sm font-semibold text-white cursor-pointer"
+              >
+                Ya, Konfirmasi
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* CONFIRM ADD CATEGORY MODAL */}
+      {showAddCatConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-md">
+          <div className="w-full max-w-md rounded-2xl border border-indigo-500/20 bg-[#121420] p-6 shadow-2xl animate-scale-in">
+            <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-indigo-500/10 text-indigo-400">
+              <Plus className="h-6 w-6" />
+            </div>
+            <h3 className="text-lg font-bold text-white">Tambah Kategori Global</h3>
+            <p className="mt-2 text-sm text-slate-300 leading-relaxed">
+              Apakah Anda yakin ingin menambahkan kategori global{" "}
+              <span className="font-semibold text-white bg-indigo-500/15 border border-indigo-500/35 px-1.5 py-0.5 rounded text-xs mx-0.5">
+                {newCatName}
+              </span>{" "}
+              berjenis{" "}
+              <span className={cn(
+                "font-semibold px-1.5 py-0.5 rounded text-xs mx-0.5",
+                newCatType === "income"
+                  ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/35"
+                  : "bg-rose-500/15 text-rose-400 border border-rose-500/35"
+              )}>
+                {newCatType === "income" ? "Pemasukan (Income)" : "Pengeluaran (Expense)"}
+              </span>
+              ? Kategori ini akan langsung dapat diakses dan digunakan oleh seluruh pengguna aplikasi.
+            </p>
+            <div className="mt-6 flex items-center justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setShowAddCatConfirm(false)}
+                className="rounded-lg px-4 py-2 text-sm font-semibold text-slate-400 hover:text-white transition cursor-pointer"
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                onClick={confirmAddCategory}
+                className="rounded-lg bg-indigo-600 hover:bg-indigo-500 transition px-5 py-2 text-sm font-semibold text-white cursor-pointer"
+              >
+                Ya, Tambahkan
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* CONFIRM DELETE CATEGORY MODAL */}
+      {showDeleteCatConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-md">
+          <div className="w-full max-w-md rounded-2xl border border-red-500/20 bg-[#201212] p-6 shadow-2xl animate-scale-in">
+            <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-500/10 text-red-400">
+              <Trash2 className="h-6 w-6" />
+            </div>
+            <h3 className="text-lg font-bold text-white">Konfirmasi Hapus Kategori</h3>
+            <p className="mt-2 text-sm text-slate-300 leading-relaxed">
+              Apakah Anda yakin ingin menghapus kategori global{" "}
+              <span className="font-semibold text-white bg-rose-500/15 border border-rose-500/35 px-1.5 py-0.5 rounded text-xs mx-0.5">
+                {showDeleteCatConfirm.name}
+              </span>
+              ? Tindakan ini sangat krusial dan dapat memicu kegagalan relasi pada data transaksi pengguna yang sudah menggunakan kategori ini sebelumnya.
+            </p>
+            <div className="mt-6 flex items-center justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setShowDeleteCatConfirm(null)}
+                className="rounded-lg px-4 py-2 text-sm font-semibold text-slate-400 hover:text-white transition cursor-pointer"
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                onClick={confirmDeleteCategory}
+                className="rounded-lg bg-red-600 hover:bg-red-500 transition px-5 py-2 text-sm font-semibold text-white cursor-pointer"
+              >
+                Ya, Hapus
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* CONFIRM ROLE CHANGE MODAL */}
+      {showRoleChangeConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-md">
+          <div className="w-full max-w-md rounded-2xl border border-indigo-500/20 bg-[#121420] p-6 shadow-2xl animate-scale-in">
+            <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-indigo-500/10 text-indigo-400">
+              <Shield className="h-6 w-6" />
+            </div>
+            <h3 className="text-lg font-bold text-white">Ubah Role Pengguna</h3>
+            <p className="mt-2 text-sm text-slate-300 leading-relaxed">
+              Apakah Anda yakin ingin mengubah hak akses role untuk{" "}
+              <span className="font-semibold text-white bg-[#1e2235] border border-slate-500/30 px-1.5 py-0.5 rounded text-xs mx-0.5">
+                {showRoleChangeConfirm.email}
+              </span>{" "}
+              menjadi{" "}
+              <span className={cn(
+                "font-semibold px-1.5 py-0.5 rounded text-xs mx-0.5",
+                showRoleChangeConfirm.role === "super_admin"
+                  ? "bg-red-500/15 text-red-400 border border-red-500/35"
+                  : showRoleChangeConfirm.role === "admin"
+                  ? "bg-indigo-500/15 text-indigo-400 border border-indigo-500/35"
+                  : "bg-slate-500/15 text-slate-400 border border-slate-500/35"
+              )}>
+                {showRoleChangeConfirm.role.toUpperCase()}
+              </span>
+              ? Perubahan hak akses akan segera aktif saat pengguna mengakses halaman dashboard berikutnya.
+            </p>
+            <div className="mt-6 flex items-center justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setShowRoleChangeConfirm(null)}
+                className="rounded-lg px-4 py-2 text-sm font-semibold text-slate-400 hover:text-white transition cursor-pointer"
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                onClick={confirmSuperAdminChangeRole}
+                className="rounded-lg bg-indigo-600 hover:bg-indigo-500 transition px-5 py-2 text-sm font-semibold text-white cursor-pointer"
+              >
+                Ya, Ubah
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* CONFIRM APPROVAL MODAL */}
+      {showApprovalConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-md">
+          <div className="w-full max-w-md rounded-2xl border border-indigo-500/20 bg-[#121420] p-6 shadow-2xl animate-scale-in">
+            <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-indigo-500/10 text-indigo-400">
+              <UserPlus className="h-6 w-6" />
+            </div>
+            <h3 className="text-lg font-bold text-white">Proses Permintaan Role</h3>
+            <p className="mt-2 text-sm text-slate-300 leading-relaxed">
+              Apakah Anda yakin ingin{" "}
+              <span className={cn(
+                "font-semibold px-1.5 py-0.5 rounded text-xs mx-0.5",
+                showApprovalConfirm.decision === "approved"
+                  ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/35"
+                  : "bg-red-500/15 text-red-400 border border-red-500/35"
+              )}>
+                {showApprovalConfirm.decision === "approved" ? "MENYETUJUI" : "MENOLAK"}
+              </span>{" "}
+              pengajuan promosi role{" "}
+              <span className="font-semibold text-indigo-400 bg-indigo-500/15 border border-indigo-500/35 px-1.5 py-0.5 rounded text-xs mx-0.5">
+                ADMIN
+              </span>{" "}
+              untuk pengguna{" "}
+              <span className="font-semibold text-white bg-[#1e2235] border border-slate-500/30 px-1.5 py-0.5 rounded text-xs mx-0.5">
+                {showApprovalConfirm.email}
+              </span>
+              ?
+            </p>
+            <div className="mt-6 flex items-center justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setShowApprovalConfirm(null)}
+                className="rounded-lg px-4 py-2 text-sm font-semibold text-slate-400 hover:text-white transition cursor-pointer"
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                onClick={confirmProcessApproval}
+                className="rounded-lg bg-indigo-600 hover:bg-indigo-500 transition px-5 py-2 text-sm font-semibold text-white cursor-pointer"
+              >
+                Ya, Konfirmasi
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
@@ -123,8 +1077,6 @@ function ChangePasswordCard() {
     setLoading(true)
     try {
       const supabase = createClient()
-
-      // Re-authenticate with current password first
       const { data: { user } } = await supabase.auth.getUser()
       if (!user?.email) throw new Error("Tidak dapat menemukan akun.")
 
@@ -134,7 +1086,6 @@ function ChangePasswordCard() {
       })
       if (signInError) throw new Error("Password saat ini salah.")
 
-      // Update password
       const { error: updateError } = await supabase.auth.updateUser({ password: newPassword })
       if (updateError) throw new Error(updateError.message)
 
@@ -162,7 +1113,6 @@ function ChangePasswordCard() {
       </div>
 
       <form onSubmit={handleChangePassword} className="space-y-4 max-w-md">
-        {/* Current password */}
         <div className="space-y-1.5">
           <label className="text-sm font-medium text-slate-300">Password Saat Ini</label>
           <div className="relative">
@@ -181,7 +1131,6 @@ function ChangePasswordCard() {
           </div>
         </div>
 
-        {/* New password */}
         <div className="space-y-1.5">
           <label className="text-sm font-medium text-slate-300">Password Baru</label>
           <div className="relative">
@@ -201,7 +1150,6 @@ function ChangePasswordCard() {
           </div>
         </div>
 
-        {/* Confirm password */}
         <div className="space-y-1.5">
           <label className="text-sm font-medium text-slate-300">Konfirmasi Password Baru</label>
           <div className="relative">
@@ -228,14 +1176,12 @@ function ChangePasswordCard() {
           )}
         </div>
 
-        {/* Error */}
         {error && (
           <div className="rounded-lg border border-red-500/20 bg-red-500/10 px-4 py-2.5 text-sm text-red-400">
             {error}
           </div>
         )}
 
-        {/* Success */}
         {success && (
           <div className="flex items-center gap-2 rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-4 py-2.5 text-sm text-emerald-400">
             <CheckCircle2 className="h-4 w-4 shrink-0" />
@@ -277,7 +1223,7 @@ function SettingToggleCard({
   description: string
   icon: typeof Wrench
   label: string
-  onChange: (value: boolean) => void
+  onChange: () => void
   statusText: string
   tone: "info" | "warning"
 }) {
@@ -300,7 +1246,7 @@ function SettingToggleCard({
           type="button"
           role="switch"
           aria-checked={checked}
-          onClick={() => onChange(!checked)}
+          onClick={onChange}
           className={cn(
             "relative h-7 w-14 shrink-0 rounded-full border transition cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-background",
             checked ? "border-emerald-400 bg-emerald-600" : "border-slate-500 bg-slate-700"

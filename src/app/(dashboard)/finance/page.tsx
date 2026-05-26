@@ -18,7 +18,7 @@ export default async function FinancePage() {
     supabase
       .from("transaction_categories")
       .select("*")
-      .eq("user_id", userId)
+      .or(`user_id.eq.${userId},user_id.is.null`)
       .order("type", { ascending: false })
       .order("name", { ascending: true }),
     supabase

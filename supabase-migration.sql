@@ -1,5 +1,5 @@
 -- ============================================
--- kekayaan.id — Database Migration (Consolidated)
+-- kekayaan.id — Database Migration (Consolidated & Role System)
 -- Run this in Supabase SQL Editor
 -- ============================================
 
@@ -30,9 +30,10 @@ create table if not exists public.asset_snapshots (
 );
 
 -- TRANSACTION CATEGORIES TABLE
+-- Note: user_id is nullable to support global default categories
 create table if not exists public.transaction_categories (
   id uuid primary key default gen_random_uuid(),
-  user_id uuid not null references auth.users(id) on delete cascade,
+  user_id uuid references auth.users(id) on delete cascade,
   name text not null,
   type text not null check (type in ('income','expense'))
 );
@@ -69,101 +70,218 @@ create table if not exists public.monthly_cycles (
   end_day int not null default 24
 );
 
--- ============================================
--- 2. ROW LEVEL SECURITY (RLS)
--- ============================================
-alter table public.assets enable row level security;
-alter table public.asset_snapshots enable row level security;
-alter table public.transaction_categories enable row level security;
-alter table public.transactions enable row level security;
-alter table public.goals enable row level security;
-alter table public.monthly_cycles enable row level security;
+-- USER ROLES TABLE
+create table if not exists public.user_roles (
+  user_id uuid primary key references auth.users(id) on delete cascade,
+  email text not null,
+  role text not null check (role in ('user', 'admin', 'super_admin')) default 'user',
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
 
--- ASSETS POLICIES
-create policy "Users can view own assets" on public.assets for select using (auth.uid() = user_id);
-create policy "Users can insert own assets" on public.assets for insert with check (auth.uid() = user_id);
-create policy "Users can update own assets" on public.assets for update using (auth.uid() = user_id);
-create policy "Users can delete own assets" on public.assets for delete using (auth.uid() = user_id);
+-- ROLE CHANGE REQUESTS TABLE (FOR ADMIN PROMOTING USERS TO ADMIN)
+create table if not exists public.role_change_requests (
+  id uuid primary key default gen_random_uuid(),
+  requested_by uuid not null references auth.users(id) on delete cascade,
+  user_id uuid not null references auth.users(id) on delete cascade,
+  requested_role text not null check (requested_role in ('admin', 'super_admin')) default 'admin',
+  status text not null check (status in ('pending', 'approved', 'rejected')) default 'pending',
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  unique(user_id, status) -- prevent multiple pending/approved requests for the same user
+);
 
--- ASSET SNAPSHOTS POLICIES
-create policy "Users can view own snapshots" on public.asset_snapshots for select
-  using (exists (select 1 from public.assets where id = asset_id and user_id = auth.uid()));
-create policy "Users can insert own snapshots" on public.asset_snapshots for insert
-  with check (exists (select 1 from public.assets where id = asset_id and user_id = auth.uid()));
-
--- TRANSACTION CATEGORIES POLICIES
-create policy "Users can manage own categories" on public.transaction_categories for all using (auth.uid() = user_id);
-
--- TRANSACTIONS POLICIES
-create policy "Users can manage own transactions" on public.transactions for all using (auth.uid() = user_id);
-
--- GOALS POLICIES
-create policy "Users can manage own goals" on public.goals for all using (auth.uid() = user_id);
-
--- MONTHLY CYCLES POLICIES
-create policy "Users can manage own cycle" on public.monthly_cycles for all using (auth.uid() = user_id);
+-- Ensure user_id is nullable in transaction_categories just in case the table already existed
+alter table public.transaction_categories alter column user_id drop not null;
 
 -- ============================================
--- 3. AUTO-UPDATE updated_at TRIGGER
+-- 2. HELPER FUNCTIONS
 -- ============================================
-create or replace function update_updated_at()
-returns trigger as $$
-begin new.updated_at = now(); return new; end;
-$$ language plpgsql;
 
-create trigger assets_updated_at before update on public.assets
-  for each row execute function update_updated_at();
-
--- ============================================
--- 4. DEFAULT CATEGORIES & SIGNUP FUNCTIONS
--- ============================================
-create or replace function public.create_default_categories(p_user_id uuid)
-returns void
+-- Security Definer to get active user role without RLS infinite recursion
+create or replace function public.get_my_role()
+returns text
 language plpgsql
 security definer
 set search_path = public, auth
 as $$
 begin
-  insert into public.transaction_categories (user_id, name, type)
-  select p_user_id, name, type
-  from (
-    values
-      ('Gaji', 'income'),
-      ('Freelance', 'income'),
-      ('Bonus', 'income'),
-      ('Bisnis', 'income'),
-      ('Hadiah', 'income'),
-      ('Lainnya', 'income'),
-      ('Makanan', 'expense'),
-      ('Transportasi', 'expense'),
-      ('Sewa', 'expense'),
-      ('Internet', 'expense'),
-      ('Keluarga', 'expense'),
-      ('Kesehatan', 'expense'),
-      ('Hiburan', 'expense'),
-      ('Belanja', 'expense'),
-      ('Lain-lain', 'expense')
-  ) as defaults(name, type)
-  where not exists (
-    select 1
-    from public.transaction_categories existing
-    where existing.user_id = p_user_id
-  );
-
-  insert into public.monthly_cycles (user_id, start_day, end_day)
-  values (p_user_id, 25, 24)
-  on conflict (user_id) do nothing;
+  return (select role from public.user_roles where user_id = auth.uid());
 end;
 $$;
 
-create or replace function public.handle_new_user()
+-- Auto-update updated_at helper
+create or replace function update_updated_at()
+returns trigger as $$
+begin new.updated_at = now(); return new; end;
+$$ language plpgsql;
+
+-- Triggers for updated_at (with drop if exists)
+drop trigger if exists assets_updated_at on public.assets cascade;
+drop trigger if exists assets_updated_at on assets cascade;
+create trigger assets_updated_at before update on public.assets
+  for each row execute function update_updated_at();
+
+-- Trigger to execute role updates when a request is approved by super admin
+create or replace function public.handle_role_change_approval()
 returns trigger
 language plpgsql
 security definer
 set search_path = public, auth
 as $$
 begin
-  perform public.create_default_categories(new.id);
+  if new.status = 'approved' and old.status = 'pending' then
+    update public.user_roles
+    set role = new.requested_role,
+        updated_at = now()
+    where user_id = new.user_id;
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists on_role_change_approved on public.role_change_requests cascade;
+create trigger on_role_change_approved
+  after update of status on public.role_change_requests
+  for each row execute function public.handle_role_change_approval();
+
+-- ============================================
+-- 3. ROW LEVEL SECURITY (RLS) POLICIES
+-- ============================================
+
+-- Enable RLS on all tables
+alter table public.assets enable row level security;
+alter table public.asset_snapshots enable row level security;
+alter table public.transaction_categories enable row level security;
+alter table public.transactions enable row level security;
+alter table public.goals enable row level security;
+alter table public.monthly_cycles enable row level security;
+alter table public.user_roles enable row level security;
+alter table public.role_change_requests enable row level security;
+
+-- ASSETS POLICIES
+drop policy if exists "Users can view own assets" on public.assets;
+create policy "Users can view own assets" on public.assets for select using (auth.uid() = user_id);
+
+drop policy if exists "Users can insert own assets" on public.assets;
+create policy "Users can insert own assets" on public.assets for insert with check (auth.uid() = user_id);
+
+drop policy if exists "Users can update own assets" on public.assets;
+create policy "Users can update own assets" on public.assets for update using (auth.uid() = user_id);
+
+drop policy if exists "Users can delete own assets" on public.assets;
+create policy "Users can delete own assets" on public.assets for delete using (auth.uid() = user_id);
+
+-- ASSET SNAPSHOTS POLICIES
+drop policy if exists "Users can view own snapshots" on public.asset_snapshots;
+create policy "Users can view own snapshots" on public.asset_snapshots for select
+  using (exists (select 1 from public.assets where id = asset_id and user_id = auth.uid()));
+
+drop policy if exists "Users can insert own snapshots" on public.asset_snapshots;
+create policy "Users can insert own snapshots" on public.asset_snapshots for insert
+  with check (exists (select 1 from public.assets where id = asset_id and user_id = auth.uid()));
+
+-- TRANSACTIONS POLICIES
+drop policy if exists "Users can manage own transactions" on public.transactions;
+create policy "Users can manage own transactions" on public.transactions for all using (auth.uid() = user_id);
+
+-- GOALS POLICIES
+drop policy if exists "Users can manage own goals" on public.goals;
+create policy "Users can manage own goals" on public.goals for all using (auth.uid() = user_id);
+
+-- MONTHLY CYCLES POLICIES
+drop policy if exists "Users can manage own cycle" on public.monthly_cycles;
+create policy "Users can manage own cycle" on public.monthly_cycles for all using (auth.uid() = user_id);
+
+-- USER ROLES POLICIES
+drop policy if exists "Users can view own role" on public.user_roles;
+create policy "Users can view own role" on public.user_roles for select
+  using (auth.uid() = user_id);
+
+drop policy if exists "Admins and Super Admins can view all roles" on public.user_roles;
+create policy "Admins and Super Admins can view all roles" on public.user_roles for select
+  using (public.get_my_role() in ('admin', 'super_admin'));
+
+drop policy if exists "Only Super Admins can update roles" on public.user_roles;
+create policy "Only Super Admins can update roles" on public.user_roles for update
+  using (public.get_my_role() = 'super_admin')
+  with check (public.get_my_role() = 'super_admin');
+
+-- ROLE CHANGE REQUESTS POLICIES
+drop policy if exists "Admins and Super Admins can view requests" on public.role_change_requests;
+create policy "Admins and Super Admins can view requests" on public.role_change_requests for select
+  using (public.get_my_role() in ('admin', 'super_admin'));
+
+drop policy if exists "Only Admins can insert requests" on public.role_change_requests;
+create policy "Only Admins can insert requests" on public.role_change_requests for insert
+  with check (public.get_my_role() = 'admin' and requested_by = auth.uid());
+
+drop policy if exists "Only Super Admins can update requests (approve/reject)" on public.role_change_requests;
+create policy "Only Super Admins can update requests (approve/reject)" on public.role_change_requests for update
+  using (public.get_my_role() = 'super_admin')
+  with check (public.get_my_role() = 'super_admin');
+
+-- TRANSACTION CATEGORIES POLICIES
+drop policy if exists "Users can view own and default categories" on public.transaction_categories;
+create policy "Users can view own and default categories" on public.transaction_categories for select
+  using (auth.uid() = user_id or user_id is null);
+
+drop policy if exists "Users can insert own or default categories" on public.transaction_categories;
+create policy "Users can insert own or default categories" on public.transaction_categories for insert
+  with check (
+    (auth.uid() = user_id) or
+    (user_id is null and public.get_my_role() in ('admin', 'super_admin'))
+  );
+
+drop policy if exists "Users can update own or default categories" on public.transaction_categories;
+create policy "Users can update own or default categories" on public.transaction_categories for update
+  using (
+    (auth.uid() = user_id) or
+    (user_id is null and public.get_my_role() in ('admin', 'super_admin'))
+  )
+  with check (
+    (auth.uid() = user_id) or
+    (user_id is null and public.get_my_role() in ('admin', 'super_admin'))
+  );
+
+drop policy if exists "Only Super Admins can delete categories" on public.transaction_categories;
+create policy "Only Super Admins can delete categories" on public.transaction_categories for delete
+  using (public.get_my_role() = 'super_admin');
+
+-- ============================================
+-- 4. SIGNUP TRIGGER FUNCTIONS
+-- ============================================
+
+-- Trigger to run when a user registers
+create or replace function public.handle_new_user()
+returns trigger
+language plpgsql
+security definer
+set search_path = public, auth
+as $$
+declare
+  v_role text;
+begin
+  -- Determine role based on email address
+  if new.email = 'wafiyanwarulhikam12@gmail.com' then
+    v_role := 'super_admin';
+  elsif new.email = 'andikapratama5689@gmail.com' then
+    v_role := 'admin';
+  else
+    v_role := 'user';
+  end if;
+
+  -- Insert into public.user_roles
+  insert into public.user_roles (user_id, email, role)
+  values (new.id, new.email, v_role)
+  on conflict (user_id) do update
+  set email = excluded.email;
+
+  -- Create monthly cycle
+  insert into public.monthly_cycles (user_id, start_day, end_day)
+  values (new.id, 25, 24)
+  on conflict (user_id) do nothing;
+
   return new;
 exception
   when others then
@@ -172,15 +290,16 @@ exception
 end;
 $$;
 
--- Recreate trigger on auth.users for signup
+-- Recreate signup trigger
 drop trigger if exists on_auth_user_created on auth.users;
 create trigger on_auth_user_created
   after insert on auth.users
   for each row execute function public.handle_new_user();
 
--- Grant execute permissions for signup functions
-grant execute on function public.create_default_categories(uuid) to postgres, service_role;
+-- Grant permissions for triggers and helpers
+grant execute on function public.get_my_role() to anon, authenticated, postgres, service_role;
 grant execute on function public.handle_new_user() to postgres, service_role;
+grant execute on function public.handle_role_change_approval() to postgres, service_role;
 
 -- ============================================
 -- 5. DETAILED ERROR HANDLING FOR UNREGISTERED EMAIL
@@ -203,3 +322,100 @@ $$;
 
 -- Grant execute permissions for email verification RPC function
 grant execute on function public.check_email_registered(text) to anon, authenticated, postgres, service_role;
+
+-- ============================================
+-- 6. MIGRATION & SEEDING GLOBAL DEFAULT CATEGORIES
+-- ============================================
+
+-- Backfill user_roles table with existing users
+insert into public.user_roles (user_id, email, role)
+select 
+  id, 
+  email,
+  case 
+    when email = 'wafiyanwarulhikam12@gmail.com' then 'super_admin'
+    when email = 'andikapratama5689@gmail.com' then 'admin'
+    else 'user'
+  end as role
+from auth.users
+on conflict (user_id) do nothing;
+
+-- Seeding & mapping script to create global default categories
+-- and map existing user-specific transactions to them
+do $$
+declare
+  v_cat_record record;
+  v_new_id uuid;
+begin
+  -- Define the list of global categories
+  for v_cat_record in 
+    select name, type from (
+      values
+        ('Gaji', 'income'),
+        ('Freelance', 'income'),
+        ('Bonus', 'income'),
+        ('Bisnis', 'income'),
+        ('Hadiah', 'income'),
+        ('Dividen / Investasi', 'income'),
+        ('Lainnya', 'income'),
+        ('Makanan', 'expense'),
+        ('Transportasi', 'expense'),
+        ('Sewa', 'expense'),
+        ('Tagihan / Langganan', 'expense'),
+        ('Keluarga', 'expense'),
+        ('Kesehatan', 'expense'),
+        ('Hiburan', 'expense'),
+        ('Belanja', 'expense'),
+        ('Investasi', 'expense'),
+        ('Lain-lain', 'expense')
+    ) as t(name, type)
+  loop
+    -- Check if global category already exists, if not, create it
+    select id into v_new_id 
+    from public.transaction_categories 
+    where name = v_cat_record.name and type = v_cat_record.type and user_id is null;
+    
+    if v_new_id is null then
+      insert into public.transaction_categories (name, type, user_id)
+      values (v_cat_record.name, v_cat_record.type, null)
+      returning id into v_new_id;
+    end if;
+
+    -- Update existing transactions mapping
+    update public.transactions t
+    set category_id = v_new_id
+    from public.transaction_categories tc
+    where t.category_id = tc.id
+      and tc.name = v_cat_record.name
+      and tc.type = v_cat_record.type
+      and tc.user_id is not null;
+
+    -- Map old Internet category to Tagihan / Langganan
+    if v_cat_record.name = 'Tagihan / Langganan' then
+      update public.transactions t
+      set category_id = v_new_id
+      from public.transaction_categories tc
+      where t.category_id = tc.id
+        and tc.name = 'Internet'
+        and tc.type = 'expense';
+    end if;
+
+    -- Map old Dividen category to Dividen / Investasi
+    if v_cat_record.name = 'Dividen / Investasi' then
+      update public.transactions t
+      set category_id = v_new_id
+      from public.transaction_categories tc
+      where t.category_id = tc.id
+        and tc.name = 'Dividen'
+        and tc.type = 'income';
+    end if;
+
+    -- Delete user-specific duplicate default categories
+    delete from public.transaction_categories
+    where name = v_cat_record.name and type = v_cat_record.type and user_id is not null;
+  end loop;
+
+  -- Clean up other old categories
+  delete from public.transaction_categories
+  where name in ('Internet', 'Dividen') and user_id is not null;
+end $$;
