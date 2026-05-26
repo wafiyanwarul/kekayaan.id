@@ -1,6 +1,10 @@
 -- ============================================
--- kekayaan.id — Database Migration v1
+-- kekayaan.id — Database Migration (Consolidated)
 -- Run this in Supabase SQL Editor
+-- ============================================
+
+-- ============================================
+-- 1. TABLES CREATION
 -- ============================================
 
 -- ASSETS TABLE
@@ -66,7 +70,7 @@ create table if not exists public.monthly_cycles (
 );
 
 -- ============================================
--- ROW LEVEL SECURITY (RLS)
+-- 2. ROW LEVEL SECURITY (RLS)
 -- ============================================
 alter table public.assets enable row level security;
 alter table public.asset_snapshots enable row level security;
@@ -100,7 +104,7 @@ create policy "Users can manage own goals" on public.goals for all using (auth.u
 create policy "Users can manage own cycle" on public.monthly_cycles for all using (auth.uid() = user_id);
 
 -- ============================================
--- AUTO-UPDATE updated_at TRIGGER
+-- 3. AUTO-UPDATE updated_at TRIGGER
 -- ============================================
 create or replace function update_updated_at()
 returns trigger as $$
@@ -111,10 +115,9 @@ create trigger assets_updated_at before update on public.assets
   for each row execute function update_updated_at();
 
 -- ============================================
--- DEFAULT CATEGORIES FUNCTION
--- (called after user registers)
+-- 4. DEFAULT CATEGORIES & SIGNUP FUNCTIONS
 -- ============================================
-create or replace function create_default_categories(p_user_id uuid)
+create or replace function public.create_default_categories(p_user_id uuid)
 returns void
 language plpgsql
 security definer
@@ -148,13 +151,12 @@ begin
   );
 
   insert into public.monthly_cycles (user_id, start_day, end_day)
-    values (p_user_id, 25, 24)
-    on conflict (user_id) do nothing;
+  values (p_user_id, 25, 24)
+  on conflict (user_id) do nothing;
 end;
 $$;
 
--- Auto-run when new user registers
-create or replace function handle_new_user()
+create or replace function public.handle_new_user()
 returns trigger
 language plpgsql
 security definer
@@ -170,7 +172,34 @@ exception
 end;
 $$;
 
+-- Recreate trigger on auth.users for signup
 drop trigger if exists on_auth_user_created on auth.users;
 create trigger on_auth_user_created
   after insert on auth.users
   for each row execute function public.handle_new_user();
+
+-- Grant execute permissions for signup functions
+grant execute on function public.create_default_categories(uuid) to postgres, service_role;
+grant execute on function public.handle_new_user() to postgres, service_role;
+
+-- ============================================
+-- 5. DETAILED ERROR HANDLING FOR UNREGISTERED EMAIL
+-- ============================================
+create or replace function public.check_email_registered(p_email text)
+returns boolean
+language plpgsql
+security definer
+set search_path = public, auth
+as $$
+declare
+  v_exists boolean;
+begin
+  select exists (
+    select 1 from auth.users where email = p_email
+  ) into v_exists;
+  return v_exists;
+end;
+$$;
+
+-- Grant execute permissions for email verification RPC function
+grant execute on function public.check_email_registered(text) to anon, authenticated, postgres, service_role;
