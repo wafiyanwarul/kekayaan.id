@@ -31,7 +31,7 @@ export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
 
   // Public routes accessible without a session
-  const publicRoutes = ["/login", "/register", "/forgot-password", "/reset-password", "/auth"]
+  const publicRoutes = ["/login", "/register", "/forgot-password", "/reset-password", "/auth", "/verify-otp"]
   const isPublicRoute = publicRoutes.some((route) => pathname.startsWith(route))
 
   // Auth-only routes (logged-in users should be redirected away)

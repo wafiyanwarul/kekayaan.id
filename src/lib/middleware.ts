@@ -44,6 +44,7 @@ export async function updateSession(request: NextRequest) {
   const publicRoutes = [
     '/login',
     '/register',
+    '/verify-otp',
     '/forgot-password',
     '/reset-password',
     '/auth', // handles /auth/callback API route
