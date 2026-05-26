@@ -30,9 +30,47 @@ export async function proxy(request: NextRequest) {
   } = await supabase.auth.getUser()
   const { pathname } = request.nextUrl
 
+  // Fetch maintenance mode state from database
+  const { data: settingsData } = await supabase
+    .from("system_settings")
+    .select("value")
+    .eq("key", "maintenance")
+    .maybeSingle()
+
+  const maintenance = settingsData?.value as any
+  const isMaintenanceActive = maintenance?.is_active || (
+    maintenance?.type === "scheduled" &&
+    maintenance?.scheduled_start &&
+    maintenance?.scheduled_end &&
+    Date.now() >= new Date(maintenance.scheduled_start).getTime() &&
+    Date.now() <= new Date(maintenance.scheduled_end).getTime()
+  )
+
   // Public routes accessible without a session
-  const publicRoutes = ["/login", "/register", "/forgot-password", "/reset-password", "/auth", "/verify-otp"]
+  const publicRoutes = ["/login", "/register", "/forgot-password", "/reset-password", "/auth", "/verify-otp", "/maintenance"]
   const isPublicRoute = publicRoutes.some((route) => pathname.startsWith(route))
+
+  // If maintenance is active, restrict access for non-admin users
+  if (isMaintenanceActive && pathname !== "/maintenance") {
+    let isAdmin = false
+    if (user) {
+      const { data: roleData } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", user.id)
+        .maybeSingle()
+      isAdmin = roleData?.role === "admin" || roleData?.role === "super_admin"
+    }
+
+    if (!isAdmin) {
+      return NextResponse.redirect(new URL("/maintenance", request.url))
+    }
+  }
+
+  // If maintenance is NOT active but they try to visit /maintenance, redirect them away
+  if (!isMaintenanceActive && pathname === "/maintenance") {
+    return NextResponse.redirect(new URL(user ? "/dashboard" : "/login", request.url))
+  }
 
   // Auth-only routes (logged-in users should be redirected away)
   const authOnlyRoutes = ["/login", "/register", "/forgot-password"]

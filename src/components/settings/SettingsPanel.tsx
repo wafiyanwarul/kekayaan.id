@@ -61,10 +61,25 @@ export function SettingsPanel() {
 
   // System settings states
   const [maintenanceMode, setMaintenanceMode] = useState(false)
+  const [maintenanceData, setMaintenanceData] = useState<any>(null)
   const [upgradingSystem, setUpgradingSystem] = useState(false)
   const [showWarningModal, setShowWarningModal] = useState(false)
   const [pendingToggleType, setPendingToggleType] = useState<"maintenance" | "upgrade" | null>(null)
   const [pendingToggleValue, setPendingToggleValue] = useState<boolean>(false)
+
+  // Maintenance activation form states
+  const [showMaintenanceOnModal, setShowMaintenanceOnModal] = useState(false)
+  const [maintenanceType, setMaintenanceType] = useState<"instant" | "scheduled">("instant")
+  const [scheduledStart, setScheduledStart] = useState("")
+  const [scheduledEnd, setScheduledEnd] = useState("")
+  const [onDescription, setOnDescription] = useState("")
+
+  // Maintenance deactivation form states
+  const [showMaintenanceOffModal, setShowMaintenanceOffModal] = useState(false)
+  const [offDescription, setOffDescription] = useState("")
+  const [confirmationText, setConfirmationText] = useState("")
+
+  const [maintenanceActionLoading, setMaintenanceActionLoading] = useState(false)
 
   // Categories management states
   const [categories, setCategories] = useState<CategoryData[]>([])
@@ -94,6 +109,21 @@ export function SettingsPanel() {
 
   const supabase = createClient()
 
+  async function fetchMaintenanceStatus() {
+    const { data } = await supabase
+      .from("system_settings")
+      .select("value")
+      .eq("key", "maintenance")
+      .maybeSingle()
+
+    if (data && data.value) {
+      const val = data.value as any
+      setMaintenanceData(val)
+      const hasConfig = val.is_active || val.scheduled_start !== null
+      setMaintenanceMode(hasConfig)
+    }
+  }
+
   // Fetch current user and their role on mount
   useEffect(() => {
     async function initUser() {
@@ -113,7 +143,7 @@ export function SettingsPanel() {
     }
 
     initUser()
-    setMaintenanceMode(localStorage.getItem(MAINTENANCE_KEY) === "true")
+    fetchMaintenanceStatus()
     setUpgradingSystem(localStorage.getItem(UPGRADE_KEY) === "true")
   }, [])
 
@@ -153,6 +183,31 @@ export function SettingsPanel() {
     }
     setLoadingUsers(false)
   }
+
+  // Dynamic status text for maintenance mode toggle
+  const maintenanceStatusText = useMemo(() => {
+    if (!maintenanceData || (!maintenanceData.is_active && !maintenanceData.scheduled_start)) {
+      return "Sistem Berjalan Normal (Tersedia)"
+    }
+    if (maintenanceData.type === "instant") {
+      return "Pemeliharaan Instan Aktif (Akses Dikunci)"
+    }
+    
+    // Scheduled maintenance
+    const now = Date.now()
+    const start = new Date(maintenanceData.scheduled_start).getTime()
+    const end = new Date(maintenanceData.scheduled_end).getTime()
+    
+    if (now < start) {
+      const diffMin = Math.round((start - now) / 60000)
+      return `Pemeliharaan Terjadwal (Mulai dalam ${diffMin} menit)`
+    }
+    if (now >= start && now <= end) {
+      const diffMin = Math.round((end - now) / 60000)
+      return `Sedang Berjalan (Selesai dalam ${diffMin} menit)`
+    }
+    return "Jadwal Selesai (Menunggu Laporan & Penutupan Manual)"
+  }, [maintenanceData])
 
   // Categories split (income/expense)
   const incomeCategories = useMemo(
@@ -203,20 +258,149 @@ export function SettingsPanel() {
 
   // System settings triggers
   function handleToggleClick(type: "maintenance" | "upgrade", currentValue: boolean) {
-    setPendingToggleType(type)
-    setPendingToggleValue(!currentValue)
-    setShowWarningModal(true)
+    if (type === "maintenance") {
+      if (currentValue) {
+        setConfirmationText("")
+        setOffDescription("")
+        setShowMaintenanceOffModal(true)
+      } else {
+        setOnDescription("")
+        setMaintenanceType("instant")
+        const now = new Date()
+        const oneHourLater = new Date(now.getTime() + 60 * 60 * 1000)
+        const formatLocal = (d: Date) => {
+          const pad = (n: number) => n.toString().padStart(2, '0')
+          return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
+        }
+        setScheduledStart(formatLocal(now))
+        setScheduledEnd(formatLocal(oneHourLater))
+        setShowMaintenanceOnModal(true)
+      }
+    } else {
+      setPendingToggleType("upgrade")
+      setPendingToggleValue(!currentValue)
+      setShowWarningModal(true)
+    }
+  }
+
+  async function handleActivateMaintenance(e: React.FormEvent) {
+    e.preventDefault()
+    if (maintenanceType === "scheduled") {
+      if (!scheduledStart || !scheduledEnd) {
+        setErrorModal({ title: "Jadwal Tidak Valid", message: "Waktu mulai dan selesai wajib diisi." })
+        return
+      }
+      if (new Date(scheduledStart).getTime() >= new Date(scheduledEnd).getTime()) {
+        setErrorModal({ title: "Jadwal Tidak Valid", message: "Waktu selesai harus setelah waktu mulai." })
+        return
+      }
+    }
+    if (!onDescription.trim() || onDescription.trim().length < 10) {
+      setErrorModal({ title: "Deskripsi Kurang Lengkap", message: "Deskripsi rencana pemeliharaan wajib diisi minimal 10 karakter." })
+      return
+    }
+
+    setMaintenanceActionLoading(true)
+
+    const payload = {
+      is_active: maintenanceType === "instant",
+      type: maintenanceType,
+      scheduled_start: maintenanceType === "scheduled" ? new Date(scheduledStart).toISOString() : null,
+      scheduled_end: maintenanceType === "scheduled" ? new Date(scheduledEnd).toISOString() : null,
+      active_since: maintenanceType === "instant" ? new Date().toISOString() : null,
+      description: onDescription.trim()
+    }
+
+    const { error } = await supabase
+      .from("system_settings")
+      .upsert({
+        key: "maintenance",
+        value: payload,
+        updated_at: new Date().toISOString()
+      })
+
+    setMaintenanceActionLoading(false)
+
+    if (error) {
+      setErrorModal({ title: "Gagal Mengaktifkan Pemeliharaan", message: error.message })
+    } else {
+      setShowMaintenanceOnModal(false)
+      fetchMaintenanceStatus()
+      setSuccessModal({
+        title: "Mode Pemeliharaan Diaktifkan",
+        message: maintenanceType === "instant" 
+          ? "Sistem sekarang dalam mode pemeliharaan instan. Semua user biasa akan segera dialihkan."
+          : `Sistem dijadwalkan untuk pemeliharaan pada ${new Date(scheduledStart).toLocaleString("id-ID")} WIB.`
+      })
+    }
+  }
+
+  async function handleDeactivateMaintenance(e: React.FormEvent) {
+    e.preventDefault()
+    if (confirmationText !== "maintenance-well-done") {
+      setErrorModal({ title: "Konfirmasi Salah", message: "Silakan ketik 'maintenance-well-done' secara tepat untuk konfirmasi." })
+      return
+    }
+    if (!offDescription.trim() || offDescription.trim().length < 10) {
+      setErrorModal({ title: "Laporan Kurang Lengkap", message: "Laporan hasil pemeliharaan wajib diisi minimal 10 karakter." })
+      return
+    }
+
+    setMaintenanceActionLoading(true)
+
+    const startedAt = maintenanceData?.active_since || maintenanceData?.scheduled_start || new Date().toISOString()
+    const endedAt = new Date().toISOString()
+    const durationSeconds = Math.max(0, Math.floor((new Date(endedAt).getTime() - new Date(startedAt).getTime()) / 1000))
+
+    const { error: logError } = await supabase
+      .from("maintenance_logs")
+      .insert({
+        started_at: startedAt,
+        ended_at: endedAt,
+        duration_seconds: durationSeconds,
+        description: offDescription.trim(),
+        performed_by: currentUser.id
+      })
+
+    if (logError) {
+      setMaintenanceActionLoading(false)
+      setErrorModal({ title: "Gagal Menyimpan Log Pemeliharaan", message: logError.message })
+      return
+    }
+
+    const resetPayload = {
+      is_active: false,
+      type: "instant",
+      scheduled_start: null,
+      scheduled_end: null,
+      active_since: null,
+      description: null
+    }
+
+    const { error: settingsError } = await supabase
+      .from("system_settings")
+      .upsert({
+        key: "maintenance",
+        value: resetPayload,
+        updated_at: new Date().toISOString()
+      })
+
+    setMaintenanceActionLoading(false)
+
+    if (settingsError) {
+      setErrorModal({ title: "Gagal Menonaktifkan Pemeliharaan", message: settingsError.message })
+    } else {
+      setShowMaintenanceOffModal(false)
+      fetchMaintenanceStatus()
+      setSuccessModal({
+        title: "Mode Pemeliharaan Dinonaktifkan",
+        message: "Sistem berhasil dinonaktifkan dari mode pemeliharaan dan kembali normal untuk seluruh user. Log audit pemeliharaan telah berhasil disimpan."
+      })
+    }
   }
 
   function confirmToggleChange() {
-    if (pendingToggleType === "maintenance") {
-      setMaintenanceMode(pendingToggleValue)
-      localStorage.setItem(MAINTENANCE_KEY, String(pendingToggleValue))
-      setSuccessModal({
-        title: "Pemeliharaan Diperbarui",
-        message: `Maintenance Mode berhasil diubah menjadi ${pendingToggleValue ? "AKTIF" : "NONAKTIF"} secara lokal.`
-      })
-    } else if (pendingToggleType === "upgrade") {
+    if (pendingToggleType === "upgrade") {
       setUpgradingSystem(pendingToggleValue)
       localStorage.setItem(UPGRADE_KEY, String(pendingToggleValue))
       setSuccessModal({
@@ -416,7 +600,7 @@ export function SettingsPanel() {
               icon={Wrench}
               label={t("settings.maintenance")}
               onChange={() => handleToggleClick("maintenance", maintenanceMode)}
-              statusText={maintenanceMode ? t("settings.maintenanceOn") : t("settings.available")}
+              statusText={maintenanceStatusText}
               tone="warning"
             />
             <SettingToggleCard
@@ -836,11 +1020,7 @@ export function SettingsPanel() {
             </div>
             <h3 className="text-xl font-bold text-white">Danger Area: Konfirmasi Perubahan Sistem</h3>
             <p className="mt-3 text-sm text-slate-200 leading-relaxed">
-              {pendingToggleType === "maintenance"
-                ? pendingToggleValue
-                  ? "Apakah Anda yakin ingin MENGAKTIFKAN mode pemeliharaan? Akses pengguna biasa akan segera ditangguhkan sementara dari sistem."
-                  : "Apakah Anda yakin ingin MENONAKTIFKAN mode pemeliharaan? Pastikan pemeliharaan server dan migrasi database telah selesai serta sistem kembali berjalan normal."
-                : pendingToggleValue
+              {pendingToggleValue
                 ? "Apakah Anda yakin ingin MENGAKTIFKAN mode peningkatan sistem? Beberapa fungsi server akan dinonaktifkan sementara untuk penyesuaian."
                 : "Apakah Anda yakin ingin MENONAKTIFKAN mode peningkatan sistem? Pastikan proses pembaharuan modul system/pipeline telah selesai sepenuhnya."
               }
@@ -867,6 +1047,187 @@ export function SettingsPanel() {
                 Ya, Konfirmasi
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* MAINTENANCE ACTIVATION ON MODAL */}
+      {showMaintenanceOnModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-md">
+          <div className="w-full max-w-lg rounded-2xl border border-amber-500/25 bg-[#17140f] p-6 shadow-2xl animate-scale-in">
+            <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-amber-500/10 text-amber-400">
+              <Wrench className="h-6 w-6" />
+            </div>
+            <h3 className="text-xl font-bold text-white">Aktivasi Mode Pemeliharaan</h3>
+            <p className="mt-1 text-xs text-slate-400">Setup konfigurasi dan waktu pemeliharaan server secara terintegrasi.</p>
+            
+            <form onSubmit={handleActivateMaintenance} className="mt-4 space-y-4">
+              {/* Type selector */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold uppercase tracking-wider text-slate-400">Tipe Pemeliharaan</label>
+                <select
+                  value={maintenanceType}
+                  onChange={e => setMaintenanceType(e.target.value as "instant" | "scheduled")}
+                  className="w-full px-4 py-2.5 rounded-lg bg-[#0f1117] border border-[#1e2235] text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm cursor-pointer"
+                >
+                  <option value="instant">Instan (Seketika Saat Ini Juga)</option>
+                  <option value="scheduled">Terjadwal (Gunakan Rentang Waktu)</option>
+                </select>
+              </div>
+
+              {/* Scheduled Inputs */}
+              {maintenanceType === "scheduled" && (
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold uppercase tracking-wider text-slate-400">Waktu Mulai</label>
+                    <input
+                      type="datetime-local"
+                      value={scheduledStart}
+                      onChange={e => setScheduledStart(e.target.value)}
+                      required
+                      className="w-full px-4 py-2 rounded-lg bg-[#0f1117] border border-[#1e2235] text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold uppercase tracking-wider text-slate-400">Waktu Selesai</label>
+                    <input
+                      type="datetime-local"
+                      value={scheduledEnd}
+                      onChange={e => setScheduledEnd(e.target.value)}
+                      required
+                      className="w-full px-4 py-2 rounded-lg bg-[#0f1117] border border-[#1e2235] text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Plan description */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold uppercase tracking-wider text-slate-400">Rencana Perubahan & Deskripsi</label>
+                <textarea
+                  placeholder="Contoh: Migrasi skema database versi 1.2 dan optimasi query tabel transaksi..."
+                  value={onDescription}
+                  onChange={e => setOnDescription(e.target.value)}
+                  required
+                  rows={3}
+                  className="w-full px-4 py-2 rounded-lg bg-[#0f1117] border border-[#1e2235] text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm resize-none"
+                />
+                <span className="text-[10px] text-slate-500">
+                  Minimal 10 karakter. Terhitung: {onDescription.trim().length} karakter.
+                </span>
+              </div>
+
+              {/* Warnings info */}
+              <div className="rounded-lg bg-amber-500/5 border border-amber-500/15 p-3 text-[11px] text-amber-300 leading-relaxed">
+                {maintenanceType === "instant" 
+                  ? "Peringatan: Seluruh user biasa yang sedang aktif akan langsung dikeluarkan secara real-time dan dipindahkan ke halaman pemeliharaan."
+                  : "Info: Banner pemberitahuan terjadwal akan dimunculkan di atas halaman dashboard seluruh user secara real-time hingga waktu pemeliharaan tiba."
+                }
+              </div>
+
+              {/* Actions */}
+              <div className="flex items-center justify-end gap-3 pt-3 border-t border-[#29221a]">
+                <button
+                  type="button"
+                  onClick={() => setShowMaintenanceOnModal(false)}
+                  disabled={maintenanceActionLoading}
+                  className="rounded-lg px-4 py-2 text-sm font-semibold text-slate-400 hover:text-white transition cursor-pointer disabled:opacity-55"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  disabled={maintenanceActionLoading || onDescription.trim().length < 10}
+                  className="rounded-lg bg-amber-600 hover:bg-amber-500 transition px-5 py-2 text-sm font-semibold text-white cursor-pointer inline-flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {maintenanceActionLoading && <Loader2 className="h-4 w-4 animate-spin" />}
+                  Aktifkan Pemeliharaan
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* MAINTENANCE DEACTIVATION OFF MODAL */}
+      {showMaintenanceOffModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-md">
+          <div className="w-full max-w-lg rounded-2xl border border-emerald-500/25 bg-[#0f1712] p-6 shadow-2xl animate-scale-in">
+            <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-400">
+              <CheckCircle2 className="h-6 w-6" />
+            </div>
+            <h3 className="text-xl font-bold text-white">Deaktivasi Mode Pemeliharaan</h3>
+            <p className="mt-1 text-xs text-slate-400">Lengkapi laporan perubahan untuk menutup pemeliharaan sistem.</p>
+            
+            <form onSubmit={handleDeactivateMaintenance} className="mt-4 space-y-4">
+              {/* Report description */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold uppercase tracking-wider text-slate-400">Laporan Hasil Pemeliharaan (Hasil Perbaikan)</label>
+                <textarea
+                  placeholder="Contoh: Sukses mengoptimasi indeks tabel transaksi dan memperbarui versi schema..."
+                  value={offDescription}
+                  onChange={e => setOffDescription(e.target.value)}
+                  required
+                  rows={3}
+                  className="w-full px-4 py-2 rounded-lg bg-[#0f1117] border border-[#1e2235] text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm resize-none"
+                />
+                <span className="text-[10px] text-slate-500">
+                  Minimal 10 karakter. Terhitung: {offDescription.trim().length} karakter.
+                </span>
+              </div>
+
+              {/* Security confirmation keyword */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold uppercase tracking-wider text-slate-400">Konfirmasi Keamanan (Copy-Paste Dinonaktifkan)</label>
+                <input
+                  type="text"
+                  placeholder="Ketik: maintenance-well-done"
+                  value={confirmationText}
+                  onChange={e => setConfirmationText(e.target.value)}
+                  onPaste={e => {
+                    e.preventDefault()
+                    setErrorModal({
+                      title: "Proteksi Keamanan",
+                      message: "Fitur copy-paste dinonaktifkan pada input ini. Silakan ketik secara manual."
+                    })
+                  }}
+                  required
+                  className="w-full px-4 py-2.5 rounded-lg bg-[#0f1117] border border-[#1e2235] text-white placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm select-none"
+                />
+                <span className="text-[10px] text-slate-500">
+                  Ketik persis: <code className="bg-emerald-500/10 border border-emerald-500/25 px-1 py-0.5 rounded text-emerald-400 font-mono">maintenance-well-done</code>
+                </span>
+              </div>
+
+              {/* Warnings info */}
+              <div className="rounded-lg bg-emerald-500/5 border border-emerald-500/15 p-3 text-[11px] text-emerald-300 leading-relaxed">
+                Info: Seluruh durasi pengerjaan akan dihitung secara otomatis dan disimpan dalam audit log sistem.
+              </div>
+
+              {/* Actions */}
+              <div className="flex items-center justify-end gap-3 pt-3 border-t border-[#1a291e]">
+                <button
+                  type="button"
+                  onClick={() => setShowMaintenanceOffModal(false)}
+                  disabled={maintenanceActionLoading}
+                  className="rounded-lg px-4 py-2 text-sm font-semibold text-slate-400 hover:text-white transition cursor-pointer disabled:opacity-55"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  disabled={
+                    maintenanceActionLoading || 
+                    offDescription.trim().length < 10 || 
+                    confirmationText !== "maintenance-well-done"
+                  }
+                  className="rounded-lg bg-emerald-600 hover:bg-emerald-500 transition px-5 py-2 text-sm font-semibold text-white cursor-pointer inline-flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {maintenanceActionLoading && <Loader2 className="h-4 w-4 animate-spin" />}
+                  Ya, Matikan Mode Pemeliharaan
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

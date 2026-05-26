@@ -129,3 +129,22 @@ model RoleChangeRequest {
   @@map("role_change_requests")
 }
 
+model SystemSetting {
+  key       String   @id
+  value     Json
+  updatedAt DateTime @default(now()) @map("updated_at")
+
+  @@map("system_settings")
+}
+
+model MaintenanceLog {
+  id              String   @id @default(uuid())
+  startedAt       DateTime @map("started_at")
+  endedAt         DateTime @default(now()) @map("ended_at")
+  durationSeconds Int      @map("duration_seconds")
+  description     String
+  performedBy     String   @map("performed_by")
+
+  @@map("maintenance_logs")
+}
+

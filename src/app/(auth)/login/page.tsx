@@ -153,6 +153,22 @@ export default function LoginPage() {
     window.location.href = "/dashboard"
   }
 
+  async function handleGoogleLogin() {
+    setLoading(true)
+    setError("")
+    const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID
+    if (!clientId) {
+      setError("Konfigurasi Google Client ID tidak ditemukan di .env.")
+      setLoading(false)
+      return
+    }
+    const redirectUri = `${window.location.origin}/api/auth/callback/google`
+    const scope = "openid email profile"
+    const responseType = "code"
+    const googleAuthUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${encodeURIComponent(clientId)}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=${responseType}&scope=${encodeURIComponent(scope)}&access_type=offline&prompt=consent`
+    window.location.href = googleAuthUrl
+  }
+
   return (
     <div className="min-h-screen flex bg-[#0a0c14]">
 
@@ -266,16 +282,15 @@ export default function LoginPage() {
             <div className="flex-1 h-px bg-[#1e2440]" />
           </div>
 
-          {/* Google (disabled) */}
+          {/* Google login button */}
           <button
             type="button"
-            disabled
-            className="w-full flex items-center justify-center gap-3 py-2.5 px-4 rounded-xl border border-[#1e2440] bg-[#151829] text-slate-400 font-medium text-sm cursor-not-allowed opacity-50 transition"
-            title="Segera hadir"
+            onClick={handleGoogleLogin}
+            disabled={loading}
+            className="w-full flex items-center justify-center gap-3 py-2.5 px-4 rounded-xl border border-[#1e2440] bg-[#151829] hover:bg-[#1f233a] hover:text-white text-slate-300 font-medium text-sm transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <GoogleIcon />
             Masuk dengan Google
-            <span className="text-[10px] bg-indigo-500/20 text-indigo-400 px-2 py-0.5 rounded-full ml-auto">Segera</span>
           </button>
 
           {/* Register link */}

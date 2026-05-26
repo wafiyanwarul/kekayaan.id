@@ -83,8 +83,8 @@ export function SidebarNav() {
       >
         {isOpen ? (
           <Link href="/dashboard" className="flex items-center gap-3 min-w-0 flex-1">
-            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/5 text-primary ring-1 ring-primary/10 shrink-0 overflow-hidden">
-              <img src="/android-chrome-192x192.png" alt="logo" className="h-7 w-7 object-contain" />
+            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/5 text-primary ring-1 ring-primary/10 shrink-0 overflow-hidden">
+              <img src="/android-chrome-192x192.png" alt="logo" className="h-8 w-8 object-contain" />
             </span>
             <span className="leading-tight min-w-0">
               <span className="block text-lg font-bold text-primary truncate">kekayaan.id</span>
@@ -98,9 +98,9 @@ export function SidebarNav() {
           <Link
             href="/dashboard"
             title="kekayaan.id"
-            className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/5 text-primary ring-1 ring-primary/10 overflow-hidden"
+            className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/5 text-primary ring-1 ring-primary/10 overflow-hidden"
           >
-            <img src="/android-chrome-192x192.png" alt="logo" className="h-7 w-7 object-contain" />
+            <img src="/android-chrome-192x192.png" alt="logo" className="h-8 w-8 object-contain" />
           </Link>
         )}
       </div>
@@ -160,8 +160,8 @@ export function MobileSidebarDrawer() {
         {/* Header */}
         <div className="px-5 py-4 border-b flex items-center justify-between">
           <Link href="/dashboard" className="flex items-center gap-3" onClick={closeMobile}>
-            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/5 text-primary ring-1 ring-primary/10 shrink-0 overflow-hidden">
-              <img src="/android-chrome-192x192.png" alt="logo" className="h-7 w-7 object-contain" />
+            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/5 text-primary ring-1 ring-primary/10 shrink-0 overflow-hidden">
+              <img src="/android-chrome-192x192.png" alt="logo" className="h-8 w-8 object-contain" />
             </span>
             <span className="leading-tight">
               <span className="block text-lg font-bold text-primary">kekayaan.id</span>

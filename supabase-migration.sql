@@ -419,3 +419,47 @@ begin
   delete from public.transaction_categories
   where name in ('Internet', 'Dividen') and user_id is not null;
 end $$;
+
+-- ============================================
+-- 7. SYSTEM SETTINGS & MAINTENANCE LOGS
+-- ============================================
+
+-- SYSTEM SETTINGS TABLE
+create table if not exists public.system_settings (
+  key text primary key,
+  value jsonb not null,
+  updated_at timestamptz not null default now()
+);
+
+-- MAINTENANCE LOGS TABLE
+create table if not exists public.maintenance_logs (
+  id uuid primary key default gen_random_uuid(),
+  started_at timestamptz not null,
+  ended_at timestamptz not null default now(),
+  duration_seconds int not null,
+  description text not null,
+  performed_by uuid not null references auth.users(id) on delete cascade
+);
+
+-- Enable RLS
+alter table public.system_settings enable row level security;
+alter table public.maintenance_logs enable row level security;
+
+-- SYSTEM SETTINGS POLICIES
+drop policy if exists "Anyone can view system settings" on public.system_settings;
+create policy "Anyone can view system settings" on public.system_settings for select using (true);
+
+drop policy if exists "Only Admins/Super Admins can manage system settings" on public.system_settings;
+create policy "Only Admins/Super Admins can manage system settings" on public.system_settings
+  for all using (public.get_my_role() in ('admin', 'super_admin'));
+
+-- MAINTENANCE LOGS POLICIES
+drop policy if exists "Only Admins/Super Admins can manage maintenance logs" on public.maintenance_logs;
+create policy "Only Admins/Super Admins can manage maintenance logs" on public.maintenance_logs
+  for all using (public.get_my_role() in ('admin', 'super_admin'));
+
+-- Seed default maintenance setting
+insert into public.system_settings (key, value)
+values ('maintenance', '{"is_active": false, "type": "instant", "scheduled_start": null, "scheduled_end": null, "active_since": null}'::jsonb)
+on conflict (key) do nothing;
+
