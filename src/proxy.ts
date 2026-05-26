@@ -47,7 +47,7 @@ export async function proxy(request: NextRequest) {
   )
 
   // Public routes accessible without a session
-  const publicRoutes = ["/login", "/register", "/forgot-password", "/reset-password", "/auth", "/verify-otp", "/maintenance"]
+  const publicRoutes = ["/login", "/register", "/forgot-password", "/reset-password", "/auth", "/verify-otp", "/maintenance", "/api/auth"]
   const isPublicRoute = publicRoutes.some((route) => pathname.startsWith(route))
 
   // If maintenance is active, restrict access for non-admin users
