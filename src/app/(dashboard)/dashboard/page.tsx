@@ -4,7 +4,9 @@ import { Banknote, Droplets, Gauge, WalletCards } from "lucide-react"
 import { DashboardWelcome } from "@/components/dashboard/DashboardWelcome"
 import { StatCard } from "@/components/shared/StatCard"
 import { WealthAllocationChart } from "@/features/assets/components/WealthAllocationChart"
+import { NetWorthTrendChart } from "@/features/assets/components/NetWorthTrendChart"
 import { MonthlyFinanceCard } from "@/features/finance/components/MonthlyFinanceCard"
+import { CashFlowBarChart } from "@/features/finance/components/CashFlowBarChart"
 import { getCycleRange, summarizeTransactions, toDateInputValue } from "@/features/finance/utils"
 import { createClient } from "@/lib/supabase/server"
 import { formatCompact } from "@/lib/utils"
@@ -107,7 +109,13 @@ export default async function DashboardPage() {
         </div>
       </section>
 
-      {/* Charts Row */}
+      {/* Historical Trend Charts */}
+      <section className="grid md:grid-cols-2 gap-4">
+        <NetWorthTrendChart />
+        <CashFlowBarChart />
+      </section>
+
+      {/* Current Allocation & Monthly Breakdown */}
       <section className="grid md:grid-cols-2 gap-4">
         <WealthAllocationChart
           liquid={wealth.liquidWealth}
@@ -125,3 +133,4 @@ export default async function DashboardPage() {
     </div>
   )
 }
+

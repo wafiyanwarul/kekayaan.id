@@ -463,3 +463,36 @@ insert into public.system_settings (key, value)
 values ('maintenance', '{"is_active": false, "type": "instant", "scheduled_start": null, "scheduled_end": null, "active_since": null}'::jsonb)
 on conflict (key) do nothing;
 
+-- ============================================
+-- 8. AUTOMATIC SNAPSHOT TRIGGER & BACKFILL
+-- ============================================
+
+-- Function to handle asset snapshots automatically
+create or replace function public.handle_asset_change()
+returns trigger
+language plpgsql
+security definer
+set search_path = public, auth
+as $$
+begin
+  insert into public.asset_snapshots (asset_id, value, snapshot_date)
+  values (new.id, new.current_value, current_date)
+  on conflict (asset_id, snapshot_date) do update
+  set value = excluded.value;
+  return new;
+end;
+$$;
+
+-- Trigger to record snapshot when asset value changes
+drop trigger if exists on_asset_changed on public.assets cascade;
+create trigger on_asset_changed
+  after insert or update of current_value on public.assets
+  for each row execute function public.handle_asset_change();
+
+-- Backfill initial snapshots for existing assets if they don't have one
+insert into public.asset_snapshots (asset_id, value, snapshot_date)
+select id, current_value, current_date
+from public.assets
+on conflict (asset_id, snapshot_date) do nothing;
+
+
