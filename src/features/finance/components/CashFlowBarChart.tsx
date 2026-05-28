@@ -147,7 +147,7 @@ export function CashFlowBarChart() {
           </div>
         ) : (
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }} barGap={4}>
+            <BarChart data={data} margin={{ top: 10, right: 15, left: 10, bottom: 0 }} barGap={4}>
               <CartesianGrid strokeDasharray="3 3" stroke="#1e2440/40" vertical={false} />
               <XAxis
                 dataKey="label"
@@ -165,7 +165,7 @@ export function CashFlowBarChart() {
                 tickLine={false}
                 axisLine={false}
                 tickFormatter={(v) => formatCompact(v)}
-                dx={-10}
+                dx={-5}
               />
               <Tooltip content={<CustomTooltip />} cursor={{ fill: "rgba(255,255,255,0.03)" }} />
               <Legend verticalAlign="top" height={36} iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 11, fontWeight: 500, paddingBottom: 10 }} />
