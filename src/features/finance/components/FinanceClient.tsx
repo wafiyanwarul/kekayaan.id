@@ -19,6 +19,7 @@ import {
 } from "lucide-react"
 import type { LucideIcon } from "lucide-react"
 import { PdfExportModal } from "./PdfExportModal"
+import { AnimatedCounter } from "@/components/shared/AnimatedCounter"
 import {
   Bar,
   BarChart,
@@ -414,28 +415,28 @@ export function FinanceClient({ cycle, initialCategories, initialTransactions, u
         <FinanceStatCard
           icon={ArrowUpRight}
           label="Pemasukan"
-          value={formatCompact(activeSummary.income)}
+          value={<AnimatedCounter value={activeSummary.income} formatter="compact" />}
           tone="income"
           sub="Siklus aktif"
         />
         <FinanceStatCard
           icon={ArrowDownLeft}
           label="Pengeluaran Riil"
-          value={formatCompact(activeSummary.expense - dailyAvgStats.investasi)}
+          value={<AnimatedCounter value={activeSummary.expense - dailyAvgStats.investasi} formatter="compact" />}
           tone="expense"
           sub={dailyAvgStats.investasi > 0 ? "Excl. investasi" : "Siklus aktif"}
         />
         <FinanceStatCard
           icon={PiggyBank}
           label="Surplus / Savings"
-          value={formatCompact(activeSummary.income - (activeSummary.expense - dailyAvgStats.investasi))}
+          value={<AnimatedCounter value={activeSummary.income - (activeSummary.expense - dailyAvgStats.investasi)} formatter="compact" />}
           tone={(activeSummary.income - (activeSummary.expense - dailyAvgStats.investasi)) >= 0 ? "income" : "expense"}
           sub={`${activeSummary.income > 0 ? (((activeSummary.income - (activeSummary.expense - dailyAvgStats.investasi)) / activeSummary.income) * 100).toFixed(1) : "0"}% savings rate`}
         />
         <FinanceStatCard
           icon={Percent}
           label="Savings Rate"
-          value={`${activeSummary.income > 0 ? (((activeSummary.income - (activeSummary.expense - dailyAvgStats.investasi)) / activeSummary.income) * 100).toFixed(1) : "0"}%`}
+          value={<AnimatedCounter value={activeSummary.income > 0 ? (((activeSummary.income - (activeSummary.expense - dailyAvgStats.investasi)) / activeSummary.income) * 100) : 0} formatter="percent" />}
           tone="neutral"
           sub="Surplus ÷ pemasukan"
         />
@@ -449,19 +450,25 @@ export function FinanceClient({ cycle, initialCategories, initialTransactions, u
           <div className="grid gap-3 sm:grid-cols-3">
             <div className="rounded-xl border border-indigo-500/20 bg-indigo-500/5 p-4">
               <p className="text-[11px] font-semibold uppercase tracking-wider text-indigo-400">Surplus (sebelum invest)</p>
-              <p className="mt-1 text-2xl font-extrabold text-indigo-300">{formatCompact(trueSurplus)}</p>
+              <p className="mt-1 text-2xl font-extrabold text-indigo-300">
+                <AnimatedCounter value={trueSurplus} formatter="compact" />
+              </p>
               <p className="mt-1 text-xs text-slate-400">Pemasukan − pengeluaran riil</p>
             </div>
             <div className="rounded-xl border border-purple-500/20 bg-purple-500/5 p-4">
               <p className="text-[11px] font-semibold uppercase tracking-wider text-purple-400">Dialokasikan ke Investasi</p>
-              <p className="mt-1 text-2xl font-extrabold text-purple-300">{formatCompact(dailyAvgStats.investasi)}</p>
+              <p className="mt-1 text-2xl font-extrabold text-purple-300">
+                <AnimatedCounter value={dailyAvgStats.investasi} formatter="compact" />
+              </p>
               <p className="mt-1 text-xs text-slate-400">
                 {activeSummary.income > 0 ? ((dailyAvgStats.investasi / activeSummary.income) * 100).toFixed(1) : 0}% dari pemasukan
               </p>
             </div>
             <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-4">
               <p className="text-[11px] font-semibold uppercase tracking-wider text-emerald-400">Kas Likuid (di tangan)</p>
-              <p className={`mt-1 text-2xl font-extrabold ${liquid >= 0 ? "text-emerald-300" : "text-rose-400"}`}>{formatCompact(liquid)}</p>
+              <p className={`mt-1 text-2xl font-extrabold ${liquid >= 0 ? "text-emerald-300" : "text-rose-400"}`}>
+                <AnimatedCounter value={liquid} formatter="compact" />
+              </p>
               <p className="mt-1 text-xs text-slate-400">Surplus − investasi</p>
             </div>
           </div>
@@ -965,7 +972,7 @@ function FinanceStatCard({
   label: string
   sub: string
   tone: "expense" | "income" | "neutral"
-  value: string
+  value: React.ReactNode
 }) {
   return (
     <div className="rounded-xl border bg-card p-5">
