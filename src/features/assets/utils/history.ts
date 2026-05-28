@@ -1,112 +1,115 @@
 import { format } from "date-fns"
 import { id } from "date-fns/locale"
-import { getPrisma } from "@/lib/prisma/client"
+import type { SupabaseClient } from "@supabase/supabase-js"
 import { getCycleRange, summarizeTransactions } from "@/features/finance/utils"
 
 export interface HistoricalDataPoint {
-  label: string         // e.g. "Mei 26"
+  label: string
   netWorth: number
   income: number
   expense: number
   surplus: number
   savingsRate: number
-  changePercent: number // Growth rate vs previous cycle
+  changePercent: number
   startDate: string
   endDate: string
 }
 
 export async function getHistoricalData(
+  supabase: SupabaseClient,
   userId: string,
   monthsRange: number = 6
 ): Promise<HistoricalDataPoint[]> {
-  const prisma = getPrisma()
+  // 1. Get monthly cycle settings
+  const { data: cycleSetting } = await supabase
+    .from("monthly_cycles")
+    .select("start_day, end_day")
+    .eq("user_id", userId)
+    .maybeSingle()
 
-  // 1. Get monthly cycle settings for the user
-  const cycleSetting = await prisma.monthlyCycle.findUnique({
-    where: { userId },
-  })
-  const startDay = cycleSetting?.startDay ?? 25
-  const endDay = cycleSetting?.endDay ?? 24
+  const startDay = cycleSetting?.start_day ?? 25
+  const endDay = cycleSetting?.end_day ?? 24
 
-  // 2. Generate the last N billing cycles
+  // 2. Generate the last N billing cycles (oldest → newest)
   const now = new Date()
   const cycles: Array<{ start: Date; end: Date; label: string }> = []
-  
-  for (let i = 0; i < monthsRange; i++) {
-    // Generate a date in the middle of target month to avoid timezone boundary issues
+
+  for (let i = monthsRange - 1; i >= 0; i--) {
     const targetDate = new Date(now.getFullYear(), now.getMonth() - i, 15)
     const range = getCycleRange(targetDate, { start_day: startDay, end_day: endDay })
-    const label = format(range.end, "MMM yy", { locale: id })
-    
     cycles.push({
       start: range.start,
       end: range.end,
-      label,
+      label: format(range.end, "MMM yy", { locale: id }),
     })
   }
-  
-  // Sort oldest to newest for chronological chart order
-  cycles.reverse()
 
-  // 3. Fetch assets and snapshots
-  const assets = await prisma.asset.findMany({
-    where: { userId },
-    include: {
-      snapshots: {
-        orderBy: {
-          snapshotDate: "desc",
-        },
-      },
-    },
-  })
+  const oldestStart = format(cycles[0].start, "yyyy-MM-dd")
+  const newestEnd = format(cycles[cycles.length - 1].end, "yyyy-MM-dd")
 
-  // 4. Fetch transactions within the history range
-  const oldestCycleStart = cycles[0].start
-  const transactions = await prisma.transaction.findMany({
-    where: {
-      userId,
-      transactionDate: {
-        gte: oldestCycleStart,
-      },
-    },
-  })
+  // 3. Fetch all user assets
+  const { data: assets } = await supabase
+    .from("assets")
+    .select("id, current_value, created_at")
+    .eq("user_id", userId)
 
-  // 5. Calculate data points for each cycle
+  const assetIds = (assets ?? []).map((a: { id: string }) => a.id)
+
+  // 4. Fetch all snapshots for user's assets within the range
+  const { data: snapshots } = assetIds.length > 0
+    ? await supabase
+        .from("asset_snapshots")
+        .select("asset_id, value, snapshot_date")
+        .in("asset_id", assetIds)
+        .gte("snapshot_date", oldestStart)
+        .lte("snapshot_date", newestEnd)
+        .order("snapshot_date", { ascending: false })
+    : { data: [] }
+
+  // 5. Fetch all transactions in the range
+  const { data: transactions } = await supabase
+    .from("transactions")
+    .select("amount, type, transaction_date")
+    .eq("user_id", userId)
+    .gte("transaction_date", oldestStart)
+    .lte("transaction_date", newestEnd)
+
+  // 6. Build data points per cycle
   const dataPoints: HistoricalDataPoint[] = []
 
   for (let i = 0; i < cycles.length; i++) {
     const cycle = cycles[i]
-    
-    // A. Reconstruct Net Worth at the end of the cycle
+    const cycleEndStr = format(cycle.end, "yyyy-MM-dd")
+
+    // A. Reconstruct Net Worth: for each asset, take the latest snapshot on or before cycle end
     let netWorth = 0
-    for (const asset of assets) {
-      // Find latest snapshot on or before cycle end
-      const latestSnapshot = asset.snapshots.find(
-        (s: { snapshotDate: Date; value: any }) => new Date(s.snapshotDate) <= cycle.end
+    for (const asset of assets ?? []) {
+      const snap = (snapshots ?? []).find(
+        (s: { asset_id: string; snapshot_date: string }) =>
+          s.asset_id === asset.id && s.snapshot_date <= cycleEndStr
       )
-      
-      if (latestSnapshot) {
-        netWorth += Number(latestSnapshot.value)
+      if (snap) {
+        netWorth += Number(snap.value)
       } else {
-        // Fallback: If asset was created before/during this cycle, use the oldest snapshot or current value
-        if (new Date(asset.createdAt) <= cycle.end) {
-          const oldestSnapshot = asset.snapshots[asset.snapshots.length - 1]
-          netWorth += oldestSnapshot ? Number(oldestSnapshot.value) : Number(asset.currentValue)
+        // Asset existed before cycle end but has no snapshot yet — use current_value as fallback
+        if (asset.created_at <= cycle.end.toISOString()) {
+          netWorth += Number(asset.current_value)
         }
       }
     }
 
-    // B. Calculate income/expense for this cycle
-    const cycleTransactions = transactions.filter((t: { transactionDate: Date }) => {
-      const date = new Date(t.transactionDate)
-      return date >= cycle.start && date <= cycle.end
-    })
+    // B. Cash flow for this cycle
+    const cycleStartStr = format(cycle.start, "yyyy-MM-dd")
+    const cycleTransactions = (transactions ?? []).filter(
+      (t: { transaction_date: string }) =>
+        t.transaction_date >= cycleStartStr && t.transaction_date <= cycleEndStr
+    )
 
     const summary = summarizeTransactions(
-      cycleTransactions.map((t: { amount: any; type: any; transactionDate: any }) => ({
+      cycleTransactions.map((t: { amount: number; type: string; transaction_date: string }) => ({
         amount: Number(t.amount),
         type: t.type as "income" | "expense",
-        transaction_date: format(t.transactionDate, "yyyy-MM-dd"),
+        transaction_date: t.transaction_date,
         category_id: null,
         created_at: "",
         id: "",
@@ -116,15 +119,10 @@ export async function getHistoricalData(
       }))
     )
 
-    // C. Calculate growth percent compared to previous cycle in dataPoints
-    let changePercent = 0
-    if (i > 0) {
-      const prevNetWorth = dataPoints[i - 1].netWorth
-      changePercent = prevNetWorth > 0 ? ((netWorth - prevNetWorth) / prevNetWorth) * 100 : 0
-    } else {
-      // If it's the first data point in our array, try to find a previous snapshot/net worth if possible, otherwise default to 0
-      changePercent = 0
-    }
+    // C. Growth % vs previous cycle
+    const prevNetWorth = i > 0 ? dataPoints[i - 1].netWorth : 0
+    const changePercent =
+      prevNetWorth > 0 ? ((netWorth - prevNetWorth) / prevNetWorth) * 100 : 0
 
     dataPoints.push({
       label: cycle.label,
@@ -134,10 +132,10 @@ export async function getHistoricalData(
       surplus: summary.surplus,
       savingsRate: summary.savingsRate,
       changePercent,
-      startDate: format(cycle.start, "yyyy-MM-dd"),
-      endDate: format(cycle.end, "yyyy-MM-dd"),
+      startDate: cycleStartStr,
+      endDate: cycleEndStr,
     })
   }
 
-  return dataPoints;
+  return dataPoints
 }

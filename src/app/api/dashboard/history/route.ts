@@ -36,7 +36,8 @@ export async function GET(request: Request) {
   }
 
   try {
-    const data = await getHistoricalData(user.id, months)
+    // Pass the authenticated supabase client directly — no Prisma involved
+    const data = await getHistoricalData(supabase, user.id, months)
     return NextResponse.json(data)
   } catch (error: any) {
     console.error("Failed to fetch historical dashboard data:", error)
@@ -46,3 +47,4 @@ export async function GET(request: Request) {
     )
   }
 }
+
