@@ -47,10 +47,17 @@ export function summarizeTransactions(transactions: FinanceTransaction[]) {
   const expense = transactions
     .filter((transaction) => transaction.type === "expense")
     .reduce((sum, transaction) => sum + Number(transaction.amount), 0)
-  const surplus = income - expense
-  const savingsRate = income > 0 ? (surplus / income) * 100 : 0
+  
+  // Calculate investments (expense transactions categorized as "Investasi")
+  const investments = transactions
+    .filter((transaction) => transaction.type === "expense" && transaction.category?.name === "Investasi")
+    .reduce((sum, transaction) => sum + Number(transaction.amount), 0)
 
-  return { expense, income, savingsRate, surplus }
+  const surplus = income - expense
+  const trueSavings = surplus + investments
+  const savingsRate = income > 0 ? (trueSavings / income) * 100 : 0
+
+  return { expense, income, savingsRate, surplus, investments }
 }
 
 export function sortTransactions(transactions: FinanceTransaction[]) {

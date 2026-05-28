@@ -1,6 +1,6 @@
 import { format } from "date-fns"
 import { id } from "date-fns/locale"
-import { Banknote, Droplets, Gauge, WalletCards } from "lucide-react"
+import { Banknote, Droplets, Gauge, WalletCards, TrendingUp } from "lucide-react"
 import { DashboardWelcome } from "@/components/dashboard/DashboardWelcome"
 import { StatCard } from "@/components/shared/StatCard"
 import { WealthAllocationChart } from "@/features/assets/components/WealthAllocationChart"
@@ -22,7 +22,7 @@ export default async function DashboardPage() {
   const [{ data: assets }, { data: cycle }] = await Promise.all([
     supabase
       .from("assets")
-      .select("current_value,is_liquid")
+      .select("current_value,is_liquid,category")
       .eq("user_id", userId),
     supabase
       .from("monthly_cycles")
@@ -33,7 +33,7 @@ export default async function DashboardPage() {
   const activeCycle = getCycleRange(new Date(), cycle ?? { start_day: 25, end_day: 24 })
   const { data: cycleTransactions } = await supabase
     .from("transactions")
-    .select("amount,type,transaction_date")
+    .select("amount,type,transaction_date,category:transaction_categories(name)")
     .eq("user_id", userId)
     .gte("transaction_date", toDateInputValue(activeCycle.start))
     .lte("transaction_date", toDateInputValue(activeCycle.end))
@@ -45,6 +45,12 @@ export default async function DashboardPage() {
       if (asset.is_liquid) summary.liquidWealth += value
       else summary.nonLiquidWealth += value
 
+      // Calculate investment assets: stocks, mutual_funds, bonds, crypto, gold
+      const investmentCategories = ["stocks", "mutual_funds", "bonds", "crypto", "gold"]
+      if (investmentCategories.includes(asset.category)) {
+        summary.investmentWealth += value
+      }
+
       summary.totalWealth += value
       return summary
     },
@@ -52,11 +58,12 @@ export default async function DashboardPage() {
       totalWealth: 0,
       liquidWealth: 0,
       nonLiquidWealth: 0,
+      investmentWealth: 0,
     }
   )
   const assetCount = assets?.length ?? 0
   const finance = summarizeTransactions(
-    (cycleTransactions ?? []).map((transaction) => ({
+    (cycleTransactions ?? []).map((transaction: any) => ({
       ...transaction,
       amount: Number(transaction.amount),
       category_id: null,
@@ -65,6 +72,7 @@ export default async function DashboardPage() {
       notes: null,
       title: "",
       user_id: userId,
+      category: transaction.category,
     }))
   )
 
@@ -77,7 +85,7 @@ export default async function DashboardPage() {
         <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">
           Total Kekayaan
         </h2>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
           <StatCard
             label="Total Kekayaan"
             value={formatCompact(wealth.totalWealth)}
@@ -97,6 +105,14 @@ export default async function DashboardPage() {
             value={formatCompact(wealth.nonLiquidWealth)}
             sub="Properti & barang"
             icon={Banknote}
+          />
+          <StatCard
+            label="Total Investasi"
+            value={formatCompact(wealth.investmentWealth)}
+            sub={wealth.totalWealth > 0
+              ? `${((wealth.investmentWealth / wealth.totalWealth) * 100).toFixed(1)}% dari total aset`
+              : "0% dari total aset"}
+            icon={TrendingUp}
           />
           <StatCard
             label="Rasio Likuid"
@@ -126,6 +142,7 @@ export default async function DashboardPage() {
           totalExpense={finance.expense}
           surplus={finance.surplus}
           savingsRate={finance.savingsRate}
+          totalInvestments={finance.investments}
           cycleStart={format(activeCycle.start, "d MMM", { locale: id })}
           cycleEnd={format(activeCycle.end, "d MMM", { locale: id })}
         />

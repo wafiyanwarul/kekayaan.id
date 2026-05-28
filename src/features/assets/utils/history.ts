@@ -69,7 +69,7 @@ export async function getHistoricalData(
   // 5. Fetch all transactions in the range
   const { data: transactions } = await supabase
     .from("transactions")
-    .select("amount, type, transaction_date")
+    .select("amount, type, transaction_date, category:transaction_categories(name)")
     .eq("user_id", userId)
     .gte("transaction_date", oldestStart)
     .lte("transaction_date", newestEnd)
@@ -106,7 +106,7 @@ export async function getHistoricalData(
     )
 
     const summary = summarizeTransactions(
-      cycleTransactions.map((t: { amount: number; type: string; transaction_date: string }) => ({
+      cycleTransactions.map((t: any) => ({
         amount: Number(t.amount),
         type: t.type as "income" | "expense",
         transaction_date: t.transaction_date,
@@ -116,6 +116,7 @@ export async function getHistoricalData(
         notes: null,
         title: "",
         user_id: userId,
+        category: t.category,
       }))
     )
 
