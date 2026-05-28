@@ -61,7 +61,7 @@ const CustomTooltip = ({ active, payload }: any) => {
 }
 
 export function NetWorthTrendChart() {
-  const [selectedMonths, setSelectedMonths] = useState<number>(6)
+  const [selectedMonths, setSelectedMonths] = useState<number>(3)
   const [data, setData] = useState<HistoricalDataPoint[]>([])
   const [loading, setLoading] = useState<boolean>(true)
 
@@ -156,11 +156,11 @@ export function NetWorthTrendChart() {
         {loading ? (
           <div className="w-full h-full flex flex-col items-center justify-center space-y-4">
             <div className="relative w-full h-[220px] bg-slate-800/10 rounded-lg overflow-hidden animate-pulse flex items-end p-2 gap-1">
-              {Array.from({ length: 12 }).map((_, idx) => (
+              {[45, 60, 35, 70, 50, 80, 40, 65, 55, 75, 45, 85].map((h, idx) => (
                 <div
                   key={idx}
                   className="flex-1 bg-slate-700/20 rounded-t"
-                  style={{ height: `${20 + Math.random() * 60}%` }}
+                  style={{ height: `${h}%` }}
                 />
               ))}
             </div>
