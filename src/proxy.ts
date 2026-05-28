@@ -37,7 +37,12 @@ export async function proxy(request: NextRequest) {
     .eq("key", "maintenance")
     .maybeSingle()
 
-  const maintenance = settingsData?.value as any
+  const maintenance = settingsData?.value as {
+    is_active?: boolean
+    type?: string
+    scheduled_start?: string
+    scheduled_end?: string
+  } | undefined
   const isMaintenanceActive = maintenance?.is_active || (
     maintenance?.type === "scheduled" &&
     maintenance?.scheduled_start &&

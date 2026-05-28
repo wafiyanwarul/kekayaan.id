@@ -1,6 +1,6 @@
 import type { MetadataRoute } from "next"
 
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://kekayaan.id"
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://kekayaan-id.vercel.app"
 
 /**
  * Only public/auth pages are indexed — dashboard pages are behind auth

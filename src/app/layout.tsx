@@ -2,7 +2,7 @@ import type { Metadata } from "next"
 import { AppPreferencesProvider } from "@/components/providers/AppPreferencesProvider"
 import "./globals.css"
 
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://kekayaan.id"
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://kekayaan-id.vercel.app"
 const APP_NAME = "kekayaan.id"
 const APP_DESCRIPTION =
   "Pantau total kekayaan, pengeluaran harian, dan tujuan finansialmu dalam satu dashboard pribadi yang cerdas."
