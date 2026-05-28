@@ -1,9 +1,10 @@
 import { cn } from "@/lib/utils"
 import type { LucideIcon } from "lucide-react"
+import { ReactNode } from "react"
 
 interface StatCardProps {
   label: string
-  value: string
+  value: ReactNode
   sub?: string
   trend?: "up" | "down" | "neutral"
   className?: string

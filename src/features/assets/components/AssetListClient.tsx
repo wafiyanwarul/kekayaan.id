@@ -3,6 +3,7 @@ import { useState } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { formatRupiah, formatCompact } from "@/lib/utils"
 import { ASSET_CATEGORIES } from "@/lib/constants"
+import { AnimatedCounter } from "@/components/shared/AnimatedCounter"
 import { AssetFormModal } from "./AssetFormModal"
 
 interface Asset {
@@ -44,9 +45,9 @@ export function AssetListClient({ initialAssets, userId }: Props) {
       {/* Summary */}
       <div className="grid grid-cols-3 gap-3">
         {[
-          { label: "Total Aset", value: formatCompact(totalWealth), color: "text-indigo-400" },
-          { label: "Likuid", value: formatCompact(totalLiquid), color: "text-emerald-400" },
-          { label: "Non-Likuid", value: formatCompact(totalNonLiquid), color: "text-amber-400" },
+          { label: "Total Aset", value: <AnimatedCounter value={totalWealth} formatter={formatCompact} />, color: "text-indigo-400" },
+          { label: "Likuid", value: <AnimatedCounter value={totalLiquid} formatter={formatCompact} />, color: "text-emerald-400" },
+          { label: "Non-Likuid", value: <AnimatedCounter value={totalNonLiquid} formatter={formatCompact} />, color: "text-amber-400" },
         ].map(s => (
           <div key={s.label} className="rounded-xl border border-[#1e2235] bg-[#1a1d2e] p-4">
             <p className="text-xs text-slate-400 uppercase tracking-wide mb-1">{s.label}</p>

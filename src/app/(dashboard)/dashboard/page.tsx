@@ -9,7 +9,7 @@ import { MonthlyFinanceCard } from "@/features/finance/components/MonthlyFinance
 import { CashFlowBarChart } from "@/features/finance/components/CashFlowBarChart"
 import { getCycleRange, summarizeTransactions, toDateInputValue } from "@/features/finance/utils"
 import { createClient } from "@/lib/supabase/server"
-import { formatCompact } from "@/lib/utils"
+import { AnimatedCounter } from "@/components/shared/AnimatedCounter"
 
 export default async function DashboardPage() {
   const supabase = await createClient()
@@ -39,28 +39,24 @@ export default async function DashboardPage() {
     .lte("transaction_date", toDateInputValue(activeCycle.end))
 
   const wealth = (assets ?? []).reduce(
-    (summary, asset) => {
-      const value = Number(asset.current_value) || 0
-
-      if (asset.is_liquid) summary.liquidWealth += value
-      else summary.nonLiquidWealth += value
-
-      // Calculate investment assets: stocks, mutual_funds, bonds, crypto, gold
-      const investmentCategories = ["stocks", "mutual_funds", "bonds", "crypto", "gold"]
-      if (investmentCategories.includes(asset.category)) {
-        summary.investmentWealth += value
+    (acc, asset) => {
+      const val = Number(asset.current_value) || 0
+      acc.totalWealth += val
+      if (asset.is_liquid) {
+        acc.liquidWealth += val
+      } else {
+        acc.nonLiquidWealth += val
       }
-
-      summary.totalWealth += value
-      return summary
+      // Calculate investment assets: stocks, mutual_funds, bonds, crypto, gold, or custom investasi category
+      const investmentCategories = ["stocks", "mutual_funds", "bonds", "crypto", "gold", "investasi"]
+      if (investmentCategories.includes(asset.category)) {
+        acc.investmentWealth += val
+      }
+      return acc
     },
-    {
-      totalWealth: 0,
-      liquidWealth: 0,
-      nonLiquidWealth: 0,
-      investmentWealth: 0,
-    }
+    { totalWealth: 0, liquidWealth: 0, nonLiquidWealth: 0, investmentWealth: 0 }
   )
+
   const assetCount = assets?.length ?? 0
   const finance = summarizeTransactions(
     (cycleTransactions ?? []).map((transaction: any) => ({
@@ -88,7 +84,7 @@ export default async function DashboardPage() {
         <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
           <StatCard
             label="Total Kekayaan"
-            value={formatCompact(wealth.totalWealth)}
+            value={<AnimatedCounter value={wealth.totalWealth} formatter="compact" />}
             sub={`${assetCount} aset tercatat`}
             trend="neutral"
             icon={WalletCards}
@@ -96,19 +92,19 @@ export default async function DashboardPage() {
           />
           <StatCard
             label="Aset Likuid"
-            value={formatCompact(wealth.liquidWealth)}
+            value={<AnimatedCounter value={wealth.liquidWealth} formatter="compact" />}
             sub="Bisa dicairkan cepat"
             icon={Droplets}
           />
           <StatCard
             label="Aset Non-Likuid"
-            value={formatCompact(wealth.nonLiquidWealth)}
+            value={<AnimatedCounter value={wealth.nonLiquidWealth} formatter="compact" />}
             sub="Properti & barang"
             icon={Banknote}
           />
           <StatCard
             label="Total Investasi"
-            value={formatCompact(wealth.investmentWealth)}
+            value={<AnimatedCounter value={wealth.investmentWealth} formatter="compact" />}
             sub={wealth.totalWealth > 0
               ? `${((wealth.investmentWealth / wealth.totalWealth) * 100).toFixed(1)}% dari total aset`
               : "0% dari total aset"}
@@ -117,7 +113,7 @@ export default async function DashboardPage() {
           <StatCard
             label="Rasio Likuid"
             value={wealth.totalWealth > 0
-              ? `${((wealth.liquidWealth / wealth.totalWealth) * 100).toFixed(1)}%`
+              ? <AnimatedCounter value={((wealth.liquidWealth / wealth.totalWealth) * 100)} formatter="percent" />
               : "0%"}
             sub="Dari total aset"
             icon={Gauge}

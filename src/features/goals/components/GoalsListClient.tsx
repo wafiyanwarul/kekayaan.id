@@ -2,6 +2,7 @@
 import { useState } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { formatRupiah, formatCompact } from "@/lib/utils"
+import { AnimatedCounter } from "@/components/shared/AnimatedCounter"
 import { GoalFormModal } from "./GoalFormModal"
 import {
   Target,
@@ -171,28 +172,28 @@ export function GoalsListClient({ initialGoals, userId, averageSurplus }: Props)
         {[
           {
             label: "Total Target Keuangan",
-            value: formatCompact(totalTarget),
+            value: <AnimatedCounter value={totalTarget} formatter={formatCompact} />,
             sub: `${goals.length} target aktif`,
             color: "text-indigo-400",
             icon: Target,
           },
           {
             label: "Total Terkumpul",
-            value: formatCompact(totalSaved),
+            value: <AnimatedCounter value={totalSaved} formatter={formatCompact} />,
             sub: `Alokasi target aktif`,
             color: "text-emerald-400",
             icon: PiggyBank,
           },
           {
             label: "Sisa Kekurangan",
-            value: formatCompact(Math.max(0, totalTarget - totalSaved)),
+            value: <AnimatedCounter value={Math.max(0, totalTarget - totalSaved)} formatter={formatCompact} />,
             sub: `Dana yang perlu dicari`,
             color: "text-amber-400",
             icon: Wallet,
           },
           {
             label: "Progres Kumulatif",
-            value: `${overallProgress.toFixed(1)}%`,
+            value: <AnimatedCounter value={overallProgress} formatter={(v) => `${v.toFixed(1)}%`} />,
             sub: "Dari seluruh target",
             color: "text-purple-400",
             icon: Percent,

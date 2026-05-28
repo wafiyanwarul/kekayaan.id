@@ -1,5 +1,6 @@
 "use client"
 import { formatCompact } from "@/lib/utils"
+import { AnimatedCounter } from "@/components/shared/AnimatedCounter"
 
 interface Props {
   totalIncome: number
@@ -29,18 +30,24 @@ export function MonthlyFinanceCard({
       <div className="space-y-3">
         <div className="flex justify-between items-center">
           <span className="text-sm text-muted-foreground">Pemasukan</span>
-          <span className="text-sm font-semibold text-emerald-500">+{formatCompact(totalIncome)}</span>
+          <span className="text-sm font-semibold text-emerald-500">
+            +<AnimatedCounter value={totalIncome} formatter={formatCompact} />
+          </span>
         </div>
         
         <div className="space-y-1">
           <div className="flex justify-between items-center">
             <span className="text-sm text-muted-foreground">Pengeluaran</span>
-            <span className="text-sm font-semibold text-rose-500">-{formatCompact(totalExpense)}</span>
+            <span className="text-sm font-semibold text-rose-500">
+              -<AnimatedCounter value={totalExpense} formatter={formatCompact} />
+            </span>
           </div>
           {totalInvestments > 0 && (
             <div className="flex justify-between items-center text-[10px] text-slate-500 pl-3">
               <span>Rincian</span>
-              <span>Konsumsi: {formatCompact(totalExpense - totalInvestments)} · Investasi: {formatCompact(totalInvestments)}</span>
+              <span>
+                Konsumsi: <AnimatedCounter value={totalExpense - totalInvestments} formatter={formatCompact} /> · Investasi: <AnimatedCounter value={totalInvestments} formatter={formatCompact} />
+              </span>
             </div>
           )}
         </div>
@@ -49,14 +56,17 @@ export function MonthlyFinanceCard({
           <div className="flex justify-between items-center">
             <span className="text-sm font-medium">Surplus Kas (Likuid)</span>
             <span className={`text-base font-bold ${surplus >= 0 ? "text-emerald-500" : "text-rose-500"}`}>
-              {surplus >= 0 ? "+" : ""}{formatCompact(surplus)}
+              {surplus >= 0 ? "+" : ""}
+              <AnimatedCounter value={surplus} formatter={formatCompact} />
             </span>
           </div>
 
           {totalInvestments > 0 && (
             <div className="flex justify-between items-center text-xs font-bold text-emerald-400 pl-3 border-l-2 border-emerald-500/30 py-0.5">
               <span>Total Ditabung (Surplus + Investasi)</span>
-              <span>+{formatCompact(surplus + totalInvestments)}</span>
+              <span>
+                +<AnimatedCounter value={surplus + totalInvestments} formatter={formatCompact} />
+              </span>
             </div>
           )}
         </div>
@@ -68,7 +78,9 @@ export function MonthlyFinanceCard({
             Savings Rate 
             {totalInvestments > 0 && <span className="text-[10px] bg-emerald-500/10 text-emerald-400 px-1 py-0.5 rounded font-medium">(Termasuk Investasi)</span>}
           </span>
-          <span className="font-medium text-foreground">{savingsRate.toFixed(1)}%</span>
+          <span className="font-medium text-foreground">
+            <AnimatedCounter value={savingsRate} formatter={(v) => `${v.toFixed(1)}%`} />
+          </span>
         </div>
         <div className="h-2 bg-muted rounded-full overflow-hidden">
           <div
