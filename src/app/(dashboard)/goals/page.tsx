@@ -19,13 +19,20 @@ export default async function GoalsPage() {
     .eq("user_id", user.id)
     .order("created_at", { ascending: false })
 
-  // 2. Fetch history of past 3 cycles to calculate average surplus
+  // 2. Fetch history of past 3 cycles and calculate average surplus ONLY from active cycles
   let averageSurplus = 0
   try {
     const historicalData = await getHistoricalData(supabase, user.id, 3)
     if (Array.isArray(historicalData) && historicalData.length > 0) {
-      const totalSurplus = historicalData.reduce((sum, p) => sum + (p.surplus ?? 0), 0)
-      averageSurplus = totalSurplus / historicalData.length
+      // Filter only cycles that have financial activity (non-zero income or expense)
+      const activeCycles = historicalData.filter(p => (p.income ?? 0) > 0 || (p.expense ?? 0) > 0)
+      if (activeCycles.length > 0) {
+        const totalSurplus = activeCycles.reduce((sum, p) => sum + (p.surplus ?? 0), 0)
+        averageSurplus = totalSurplus / activeCycles.length
+      } else {
+        // Fallback to the latest cycle surplus if no active cycles yet
+        averageSurplus = historicalData[historicalData.length - 1]?.surplus ?? 0
+      }
     }
   } catch (err) {
     console.error("Failed to calculate average surplus for goals projection:", err)

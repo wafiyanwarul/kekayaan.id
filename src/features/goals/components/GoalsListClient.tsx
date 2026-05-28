@@ -60,6 +60,13 @@ export function GoalsListClient({ initialGoals, userId, averageSurplus }: Props)
   const [deleting, setDeleting] = useState<string | null>(null)
   const [pendingDelete, setPendingDelete] = useState<Goal | null>(null)
 
+  // Quick Save States
+  const [quickSaveGoal, setQuickSaveGoal] = useState<Goal | null>(null)
+  const [quickSaveAmount, setQuickSaveAmount] = useState("")
+  const [quickSaveLoading, setQuickSaveLoading] = useState(false)
+  const [quickSaveError, setQuickSaveError] = useState("")
+  const [showInfo, setShowInfo] = useState(false)
+
   // Calculate global stats
   const totalTarget = goals.reduce((s, g) => s + Number(g.target_amount), 0)
   const totalSaved = goals.reduce((s, g) => s + Number(g.current_amount), 0)
@@ -84,6 +91,40 @@ export function GoalsListClient({ initialGoals, userId, averageSurplus }: Props)
     setEditingGoal(null)
   }
 
+  async function handleQuickSaveSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    if (!quickSaveGoal) return
+    setQuickSaveLoading(true)
+    setQuickSaveError("")
+
+    try {
+      const addedAmount = parseFloat(quickSaveAmount)
+      if (isNaN(addedAmount) || addedAmount <= 0) {
+        throw new Error("Nominal tabungan tidak valid")
+      }
+
+      const newAmount = Number(quickSaveGoal.current_amount) + addedAmount
+      const supabase = createClient()
+
+      const { data, error } = await supabase
+        .from("goals")
+        .update({ current_amount: newAmount })
+        .eq("id", quickSaveGoal.id)
+        .select()
+        .single()
+
+      if (error) throw error
+
+      setGoals(prev => prev.map(g => (g.id === quickSaveGoal.id ? (data as Goal) : g)))
+      setQuickSaveGoal(null)
+      setQuickSaveAmount("")
+    } catch (err: any) {
+      setQuickSaveError(err.message || "Gagal menambahkan tabungan")
+    } finally {
+      setQuickSaveLoading(false)
+    }
+  }
+
   // Calculate remaining months helper
   function getRemainingMonths(targetDateStr: string): number {
     const target = new Date(targetDateStr)
@@ -91,6 +132,22 @@ export function GoalsListClient({ initialGoals, userId, averageSurplus }: Props)
     const diffTime = target.getTime() - now.getTime()
     const diffMonths = diffTime / (1000 * 60 * 60 * 24 * 30.4)
     return diffMonths > 0 ? diffMonths : 0
+  }
+
+  // Human readable remaining time formatter
+  function formatRemainingTime(days: number): string {
+    if (days <= 0) return "Sudah Lewat Tanggal Target"
+    if (days >= 365) {
+      const years = Math.floor(days / 365)
+      const months = Math.floor((days % 365) / 30.4)
+      if (months === 0) return `${years} tahun lagi`
+      return `${years} tahun ${months} bulan lagi`
+    }
+    if (days >= 30) {
+      const months = Math.floor(days / 30.4)
+      return `${months} bulan lagi`
+    }
+    return `${days} hari lagi`
   }
 
   // Format date helper
@@ -158,12 +215,51 @@ export function GoalsListClient({ initialGoals, userId, averageSurplus }: Props)
       </div>
 
       {/* Rata-rata Surplus Info Banner */}
-      <div className="flex items-center gap-3 p-4 rounded-xl border border-[#2e3660]/40 bg-[#181d30]/20 text-slate-300">
-        <Sparkles className="h-5 w-5 text-indigo-400 shrink-0" />
-        <p className="text-xs sm:text-sm">
-          Rata-rata surplus arus kas bulanan Anda saat ini adalah{" "}
-          <span className="text-emerald-400 font-bold">{formatRupiah(averageSurplus)}</span>. Angka ini digunakan di bawah untuk memproyeksikan estimasi waktu pencapaian target tabungan Anda.
-        </p>
+      <div className="space-y-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-xl border border-[#2e3660]/40 bg-[#181d30]/20 text-slate-300">
+          <div className="flex items-center gap-3">
+            <Sparkles className="h-5 w-5 text-indigo-400 shrink-0" />
+            <p className="text-xs sm:text-sm">
+              Surplus arus kas bulanan aktif Anda saat ini adalah{" "}
+              <span className="text-emerald-400 font-bold">{formatRupiah(averageSurplus)}</span>.
+            </p>
+          </div>
+          <button
+            onClick={() => setShowInfo(!showInfo)}
+            className="text-xs font-semibold text-indigo-300 hover:text-indigo-200 transition cursor-pointer self-start sm:self-auto"
+          >
+            {showInfo ? "🔒 Sembunyikan Detail & Rumus" : "🔍 Rumus & Transparansi Data"}
+          </button>
+        </div>
+
+        {showInfo && (
+          <div className="p-5 rounded-xl border border-[#1e2235] bg-[#141624]/65 text-xs text-slate-300 space-y-4 leading-relaxed">
+            <div className="space-y-1.5">
+              <h4 className="font-bold text-white text-sm">📐 Rumus Perhitungan Target & Proyeksi:</h4>
+              <ul className="list-disc pl-5 space-y-1 text-slate-400">
+                <li>
+                  <span className="text-white font-medium">Sisa Kekurangan</span> = Target Nominal − Dana Terkumpul
+                </li>
+                <li>
+                  <span className="text-white font-medium">Target Tabungan Bulanan</span> = Sisa Kekurangan ÷ Sisa Bulan s.d. Tanggal Target
+                </li>
+                <li>
+                  <span className="text-white font-medium">Surplus Bulanan Aktif</span> = Diambil dari pencatatan transaksi di <strong>Arus Kas (Expense Tracker)</strong>. Kami hanya menghitung rata-rata dari bulan yang memiliki aktivitas transaksi agar kalkulasi pengguna baru tidak ter-dilusi oleh bulan kosong di masa lalu.
+                </li>
+              </ul>
+            </div>
+
+            <div className="space-y-1.5 border-t border-[#1e2235] pt-3">
+              <h4 className="font-bold text-white text-sm">💡 Hubungan dengan Expense Tracker & Aset:</h4>
+              <p className="text-slate-400">
+                Jika Anda mencatat alokasi tabungan target (misalnya membeli Reksa Dana Bibit atau Emas) sebagai kategori <strong>&quot;Investasi&quot;</strong> yang bertipe <strong>Pengeluaran (Expense)</strong> di Expense Tracker, maka hal tersebut secara alami akan mengurangi nilai surplus kas bulanan Anda di sistem.
+              </p>
+              <p className="text-slate-400 mt-1">
+                Namun, hal ini sepenuhnya aman! Anda dapat melacak kemajuannya secara transparan dengan memperbarui dana target di halaman ini melalui tombol <strong>+ Tabung Dana</strong> di setiap kartu untuk mencatat dana investasi/tabungan riil yang berhasil Anda sisihkan untuk goal tersebut.
+              </p>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Section Header */}
@@ -209,27 +305,31 @@ export function GoalsListClient({ initialGoals, userId, averageSurplus }: Props)
             const remainingMonths = getRemainingMonths(goal.target_date)
             const remainingDays = Math.ceil(remainingMonths * 30.4)
 
+            const sisaKekurangan = Math.max(0, Number(goal.target_amount) - Number(goal.current_amount))
+
+            // Realistic required monthly savings
+            // Note: remainingMonths defaults to a minimum of 0.1 to avoid division by zero
+            const calculatedRemainingMonths = remainingMonths > 0 ? remainingMonths : 0.1
+            const requiredMonthly = sisaKekurangan / calculatedRemainingMonths
+
             // Smart Projections
             let projectionText = ""
             let projectionStatus: "success" | "warning" | "info" = "info"
-
-            const sisaKekurangan = Number(goal.target_amount) - Number(goal.current_amount)
 
             if (isCompleted) {
               projectionText = "Target ini telah tercapai! Selamat atas kedisiplinan keuangan Anda! 🎉"
               projectionStatus = "success"
             } else if (averageSurplus > 0) {
-              const monthsNeeded = sisaKekurangan / averageSurplus
-              if (monthsNeeded <= remainingMonths) {
-                projectionText = `Proyeksi: Tepat waktu! Selesai dalam ~${Math.ceil(monthsNeeded)} bulan (Target sisa: ${Math.ceil(remainingMonths - monthsNeeded)} bulan)`
+              if (averageSurplus >= requiredMonthly) {
+                projectionText = `Proyeksi: On track! Surplus bulanan Anda (${formatCompact(averageSurplus)}) mencukupi target tabungan bulanan (${formatCompact(requiredMonthly)}/bulan).`
                 projectionStatus = "success"
               } else {
-                const deficitSurplus = (sisaKekurangan / remainingMonths) - averageSurplus
-                projectionText = `Proyeksi: Terlambat ~${Math.ceil(monthsNeeded - remainingMonths)} bulan. Perlu tambahan surplus Rp ${formatCompact(deficitSurplus)}/bulan.`
+                const deficit = requiredMonthly - averageSurplus
+                projectionText = `Proyeksi: Kurang surplus. Target tabungan adalah ${formatCompact(requiredMonthly)}/bulan, sedangkan surplus Anda baru ${formatCompact(averageSurplus)}/bulan (kurang ${formatCompact(deficit)}/bulan).`
                 projectionStatus = "warning"
               }
             } else {
-              projectionText = "Proyeksi: Masukkan surplus kas bulanan (pemasukan > pengeluaran) untuk melihat estimasi waktu pencapaian."
+              projectionText = `Proyeksi: Untuk mencapai target tepat waktu, Anda perlu menyisihkan ${formatCompact(requiredMonthly)}/bulan.`
               projectionStatus = "info"
             }
 
@@ -280,7 +380,7 @@ export function GoalsListClient({ initialGoals, userId, averageSurplus }: Props)
                     <span>Target: {formatDateIndonesian(goal.target_date)}</span>
                     {!isCompleted && (
                       <span className="text-[10px] bg-slate-800 text-slate-300 px-1.5 py-0.5 rounded-full font-medium shrink-0">
-                        {remainingDays > 0 ? `${remainingDays} hari lagi` : "Sudah Lewat Target"}
+                        {formatRemainingTime(remainingDays)}
                       </span>
                     )}
                   </div>
@@ -316,22 +416,39 @@ export function GoalsListClient({ initialGoals, userId, averageSurplus }: Props)
                   </div>
                 </div>
 
-                {/* Projection Message */}
-                <div
-                  className={`mt-4 p-3 rounded-xl border text-[11px] font-medium leading-relaxed flex items-start gap-2.5 ${
-                    projectionStatus === "success"
-                      ? "bg-emerald-500/5 border-emerald-500/10 text-emerald-400"
-                      : projectionStatus === "warning"
-                      ? "bg-rose-500/5 border-rose-500/10 text-rose-300"
-                      : "bg-[#0f1117]/80 border-[#1e2235] text-slate-400"
-                  }`}
-                >
-                  {projectionStatus === "success" ? (
-                    <CheckCircle2 className="h-3.5 w-3.5 shrink-0 mt-0.5" />
-                  ) : (
-                    <AlertCircle className="h-3.5 w-3.5 shrink-0 mt-0.5" />
+                {/* Card Actions Footer */}
+                <div className="space-y-3 pt-2">
+                  {!isCompleted && (
+                    <button
+                      onClick={() => {
+                        setQuickSaveGoal(goal)
+                        setQuickSaveAmount("")
+                        setQuickSaveError("")
+                      }}
+                      className="w-full py-2 px-3 bg-indigo-600/10 hover:bg-indigo-600/20 text-indigo-300 text-xs font-semibold rounded-lg border border-indigo-500/20 transition text-center cursor-pointer flex items-center justify-center gap-1.5"
+                    >
+                      <PiggyBank className="h-3.5 w-3.5" />
+                      + Tabung Dana
+                    </button>
                   )}
-                  <span>{projectionText}</span>
+
+                  {/* Projection Message */}
+                  <div
+                    className={`p-3 rounded-xl border text-[11px] font-medium leading-relaxed flex items-start gap-2.5 ${
+                      projectionStatus === "success"
+                        ? "bg-emerald-500/5 border-emerald-500/10 text-emerald-400"
+                        : projectionStatus === "warning"
+                        ? "bg-rose-500/5 border-rose-500/10 text-rose-300"
+                        : "bg-[#0f1117]/85 border-[#1e2235] text-slate-400"
+                    }`}
+                  >
+                    {projectionStatus === "success" ? (
+                      <CheckCircle2 className="h-3.5 w-3.5 shrink-0 mt-0.5" />
+                    ) : (
+                      <AlertCircle className="h-3.5 w-3.5 shrink-0 mt-0.5" />
+                    )}
+                    <span>{projectionText}</span>
+                  </div>
                 </div>
               </div>
             )
@@ -352,13 +469,70 @@ export function GoalsListClient({ initialGoals, userId, averageSurplus }: Props)
         />
       )}
 
+      {/* Quick Save Modal */}
+      {quickSaveGoal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="w-full max-w-sm rounded-2xl border border-[#1e2235] bg-[#1a1d2e] p-6 space-y-5 shadow-2xl">
+            <div className="space-y-2">
+              <h2 className="text-lg font-bold text-white">Tabung untuk Target</h2>
+              <p className="text-sm text-slate-400 leading-relaxed">
+                Masukkan nominal yang ingin Anda tambahkan ke target <span className="text-indigo-300 font-semibold">{quickSaveGoal.title}</span>.
+              </p>
+            </div>
+
+            <form onSubmit={handleQuickSaveSubmit} className="space-y-4">
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-slate-400">Nominal Tabungan (Rp)</label>
+                <input
+                  type="number"
+                  value={quickSaveAmount}
+                  onChange={e => setQuickSaveAmount(e.target.value)}
+                  placeholder="cth: 500000"
+                  required
+                  min="1"
+                  className="w-full px-4 py-2.5 rounded-lg bg-[#0f1117] border border-[#1e2235] text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition"
+                />
+              </div>
+
+              {quickSaveError && (
+                <p className="text-xs text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2">
+                  {quickSaveError}
+                </p>
+              )}
+
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setQuickSaveGoal(null)
+                    setQuickSaveAmount("")
+                    setQuickSaveError("")
+                  }}
+                  disabled={quickSaveLoading}
+                  className="flex-1 rounded-lg border border-[#1e2235] py-2.5 text-sm font-medium text-slate-300 transition hover:border-red-500/50 hover:bg-red-500/15 hover:text-red-200 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  disabled={quickSaveLoading}
+                  className="flex-1 rounded-lg bg-indigo-600 py-2.5 text-sm font-semibold text-white transition hover:bg-indigo-500 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {quickSaveLoading ? "Menyimpan..." : "Tabung"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       {/* Delete Confirmation Modal */}
       {pendingDelete && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
           <div className="w-full max-w-sm rounded-2xl border border-[#1e2235] bg-[#1a1d2e] p-6 space-y-5 shadow-2xl">
             <div className="space-y-2">
               <h2 className="text-lg font-bold text-white">Hapus Target?</h2>
-              <p className="text-sm text-slate-400">
+              <p className="text-sm text-slate-400 leading-relaxed">
                 Target <span className="text-slate-200 font-medium">{pendingDelete.title}</span> akan dihapus permanen. Tindakan ini tidak dapat dibatalkan.
               </p>
             </div>
