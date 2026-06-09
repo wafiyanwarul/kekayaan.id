@@ -4,110 +4,135 @@ import type { ParsedTransaction } from "../types"
 // BCA Mutasi Rekening Parser
 //
 // Parses raw text extracted from BCA e-Statement PDF (mBCA format).
-// Handles the two main transaction formats:
+// BCA uses TWO possible date formats in their PDFs:
+//   - "DD/MM/YYYY" (full year, newer statements)
+//   - "DD/MM"      (no year, older / period-based statements)
 //
-// 1. QR / QRIS:
-//    "TGL: 0605   QR 503   00000.00Waroeng Ma  TRANSAKSI DEBIT  14,000.00 DB"
+// BCA uses TWO possible number formats:
+//   - "14,000.00"   (comma thousands, dot decimal — English locale)
+//   - "14.000,00"   (dot thousands, comma decimal — Indonesian locale)
 //
-// 2. Mastercard / e-banking transfers / admin fees:
-//    "TRN MASTERCARD DBT Grab...  9,000.00 DB"
-//    "0106/FTFVA/WS99/SHOPEE...  TRSF E-BANKING DB  102,500.00 DB"
-//    "BIAYA ADM  6,500.00 DB"
-//
-// Date format: DD/MM/YYYY
-// Amount format: 14,000.00 (comma = thousands sep, dot = decimal)
-// Type indicator: DB = debit = expense, CR = credit = income
+// Type indicator at end of amount: DB = debit = expense, CR = credit = income
 
-
-interface RawEntry {
-  date: string            // "DD/MM/YYYY"
-  description: string     // raw keterangan (may be multi-line)
-  amount: string          // "14,000.00"
-  indicator: "DB" | "CR"
-}
-
-/**
- * Parse the amount string from BCA format to a number.
- * e.g. "14,000.00" -> 14000, "1,500,000.00" -> 1500000
- */
+// ---------------------------------------------------------------------------
+// Amount parsing — handles both ID and EN number formats
+// ---------------------------------------------------------------------------
 function parseAmount(raw: string): number {
-  return parseFloat(raw.replace(/,/g, ""))
+  const trimmed = raw.trim()
+
+  // Indonesian format: ends with ",XX" (comma decimal)
+  // e.g. "14.000,50" → 14000.50
+  if (/^\d[\d.]*,\d{2}$/.test(trimmed)) {
+    return parseFloat(trimmed.replace(/\./g, "").replace(",", "."))
+  }
+
+  // English format: ends with ".XX" (dot decimal)
+  // e.g. "14,000.50" → 14000.50
+  if (/^\d[\d,]*\.\d{2}$/.test(trimmed)) {
+    return parseFloat(trimmed.replace(/,/g, ""))
+  }
+
+  // Fallback: strip all non-numeric except last separator
+  const cleaned = trimmed.replace(/[,.](?=\d{3})/g, "").replace(",", ".")
+  return parseFloat(cleaned) || 0
 }
 
-/**
- * Convert DD/MM/YYYY to YYYY-MM-DD
- */
-function toISODate(ddmmyyyy: string): string {
-  const [d, m, y] = ddmmyyyy.split("/")
-  return `${y}-${m.padStart(2, "0")}-${d.padStart(2, "0")}`
+// ---------------------------------------------------------------------------
+// Date conversion — handles DD/MM and DD/MM/YYYY
+// ---------------------------------------------------------------------------
+function toISODate(dateStr: string, fallbackYear?: number): string {
+  const parts = dateStr.split("/")
+
+  if (parts.length === 3) {
+    const [d, m, y] = parts
+    const year = y.length === 2 ? `20${y}` : y
+    return `${year}-${m.padStart(2, "0")}-${d.padStart(2, "0")}`
+  }
+
+  // DD/MM only — use fallback year or current year
+  const [d, m] = parts
+  const year = fallbackYear ?? new Date().getFullYear()
+  return `${year}-${m.padStart(2, "0")}-${d.padStart(2, "0")}`
 }
 
-/**
- * Clean and shorten the raw description into a human-readable title.
- * Strips noise like "TRANSAKSI DEBIT", "DB INTERCHANGE", "TRSF E-BANKING DB", etc.
- */
+// Extract the year from a BCA PDF period header line, e.g.
+// "Periode  : 01/06/2026 s/d 07/06/2026"  → 2026
+function extractYearFromHeader(text: string): number | undefined {
+  const m = text.match(/(?:Periode|Period)\s*:?\s*\d{2}\/\d{2}\/(\d{4})/i)
+  if (m) return parseInt(m[1], 10)
+
+  // Try any 4-digit year after DD/MM/
+  const m2 = text.match(/\d{2}\/\d{2}\/(\d{4})/)
+  if (m2) return parseInt(m2[1], 10)
+
+  return undefined
+}
+
+// ---------------------------------------------------------------------------
+// Description cleaning
+// ---------------------------------------------------------------------------
 export function cleanDescription(raw: string): string {
-  let cleaned = raw
-    // Remove trailing type indicators
+  let s = raw
     .replace(/\s+(DB|CR)\s+INTERCHANGE\s*$/i, "")
     .replace(/\s*TRANSAKSI\s+DEBIT\s*$/i, "")
-    .replace(/\s*TRSF\s+E-BANKING\s+DB\s*$/i, "")
-    .replace(/\s*E-BANKING\s+DB\s*$/i, "")
-    // Collapse multiple whitespace and newlines
+    .replace(/\s*TRANSAKSI\s+KREDIT\s*$/i, "")
+    .replace(/\s*TRSF\s+E-BANKING\s+(DB|CR)\s*$/i, "")
+    .replace(/\s*E-BANKING\s+(DB|CR)\s*$/i, "")
     .replace(/\s+/g, " ")
     .trim()
 
-  // QR/QRIS pattern: "TGL: 0605   QR 503   00000.00MerchantName"
-  const qrMatch = cleaned.match(/TGL:\s*\d{4}\s+QR\s+\d+\s+\d+\.\d{2}(.+)/i)
-  if (qrMatch) {
-    return qrMatch[1].trim() || cleaned
-  }
+  // QR/QRIS: "TGL: 0605   QR 503   00000.00MerchantName"
+  const qr = s.match(/TGL:\s*\d{4}\s+QR\s+\d+\s+[\d.,]+(.+)/i)
+  if (qr) return qr[1].trim() || s
 
-  // MASTERCARD pattern: "TRN MASTERCARD DBTGrab* A-9E****..."
-  const cardMatch = cleaned.match(/TRN\s+MASTERCARD\s+DBT?(.+?)(?:\s+A-\w+|$)/i)
-  if (cardMatch) {
-    return cardMatch[1].trim() || cleaned
-  }
+  // Mastercard: "TRN MASTERCARD DBT Grab*..."
+  const card = s.match(/TRN\s+MASTERCARD\s+DBT?\s*(.+?)(?:\s+[A-Z]-\w+|$)/i)
+  if (card) return card[1].trim() || s
 
-  // Transfer e-banking: "0106/FTFVA/WS****9999/SHOPEE..."
-  const transferMatch = cleaned.match(/\d{4}\/\w+\/\w+\/(.+)/i)
-  if (transferMatch) {
-    return transferMatch[1].replace(/[\s-]+\d[\d*]+.*/, "").trim() || cleaned
-  }
+  // Transfer e-banking: "0106/FTFVA/WS.../SHOPEE..."
+  const trf = s.match(/\d{4}\/\w+\/\w+\/(.+)/i)
+  if (trf) return trf[1].replace(/[\s-]+[\d*]+.*$/, "").trim() || s
 
-  return cleaned
+  return s
 }
 
-/**
- * Main BCA PDF statement parser.
- * 
- * @param rawText - Plain text extracted from a BCA PDF via unpdf
- * @returns Array of ParsedTransaction objects (temp, not yet inserted to DB)
- */
+// ---------------------------------------------------------------------------
+// Amount + DB|CR regex — matches BOTH number formats at end of a string
+// ---------------------------------------------------------------------------
+// Matches:
+//   "14,000.00 DB"   (English)
+//   "14.000,00 DB"   (Indonesian)
+//   "1,500,000.00 CR"
+//   "1.500.000,00 CR"
+const AMOUNT_TAIL_RE =
+  /([\d]{1,3}(?:[.,]\d{3})*(?:[.,]\d{2}))\s+(DB|CR)\s*$/i
+
+// Date at start of a line:
+//   "DD/MM/YYYY   rest..."
+//   "DD/MM   rest..."
+const DATE_RE = /^\s*(\d{2}\/\d{2}(?:\/\d{2,4})?)\s+(.*)/
+
+// ---------------------------------------------------------------------------
+// Main parser
+// ---------------------------------------------------------------------------
 export function parseBCAStatement(rawText: string): ParsedTransaction[] {
   const results: ParsedTransaction[] = []
 
   // Normalise line endings
   const text = rawText.replace(/\r\n/g, "\n").replace(/\r/g, "\n")
+
+  // Try to find the year from the period header
+  const fallbackYear = extractYearFromHeader(text)
+
   const lines = text.split("\n")
 
-  /**
-   * BCA PDF tables have this structure (after unpdf text extraction):
-   *   DD/MM/YYYY  [description line 1]  amount  DB|CR
-   *   (optional)  [description line 2]
-   *
-   * The date column appears at the start of a new transaction entry.
-   * We scan line by line, detect date-anchored lines, then gather
-   * the amount+indicator from the same line or the next few lines.
-   */
+  console.log("[bca-parser] Total lines:", lines.length)
+  console.log("[bca-parser] Year from header:", fallbackYear)
+  console.log("[bca-parser] First 20 lines:\n", lines.slice(0, 20).join("\n"))
 
-  // Regex: matches "DD/MM/YYYY" at start of a line (with optional leading whitespace)
-  const DATE_RE = /^\s*(\d{2}\/\d{2}\/\d{4})\s+(.*)/
-
-  // Regex: matches amount + DB|CR at end of a string
-  // e.g. "...  14,000.00 DB" or "  1,500,000.00 CR"
-  const AMOUNT_TAIL_RE = /([\d,]+\.\d{2})\s+(DB|CR)\s*$/i
-
+  // Strategy: scan line-by-line.
+  // When we find a line starting with DD/MM or DD/MM/YYYY, start a new entry.
+  // Gather continuation lines until we find the amount+DB|CR tail.
   let i = 0
   while (i < lines.length) {
     const line = lines[i]
@@ -118,61 +143,58 @@ export function parseBCAStatement(rawText: string): ParsedTransaction[] {
       continue
     }
 
-    const dateStr = dateMatch[1]   // "DD/MM/YYYY"
-    let descParts = [dateMatch[2].trim()]
+    const dateStr = dateMatch[1]
+    let descParts: string[] = [dateMatch[2].trim()]
 
-    // Look ahead to gather more description lines + find amount + DB|CR
     let amountStr = ""
     let indicator: "DB" | "CR" | null = null
     let j = i + 1
 
-    // Check if amount+indicator is already on the current line
+    // Check if amount+indicator is already on this line
     const tailMatch = dateMatch[2].match(AMOUNT_TAIL_RE)
     if (tailMatch) {
       amountStr = tailMatch[1]
       indicator = tailMatch[2].toUpperCase() as "DB" | "CR"
-      // Remove the amount tail from the description
       descParts = [dateMatch[2].replace(AMOUNT_TAIL_RE, "").trim()]
     } else {
-      // Scan up to 5 more lines for continuation + amount
-      while (j < lines.length && j < i + 6) {
-        const nextLine = lines[j]
+      // Look ahead up to 8 lines for continuation + amount
+      while (j < lines.length && j < i + 9) {
+        const next = lines[j]
 
-        // Stop if we hit the next transaction (new date line)
-        if (DATE_RE.test(nextLine)) break
+        // Stop at next transaction date
+        if (DATE_RE.test(next)) break
 
-        const nextTail = nextLine.match(AMOUNT_TAIL_RE)
+        const nextTail = next.match(AMOUNT_TAIL_RE)
         if (nextTail) {
-          // This line contains the amount — grab it, strip tail, add to desc
           amountStr = nextTail[1]
           indicator = nextTail[2].toUpperCase() as "DB" | "CR"
-          const descPart = nextLine.replace(AMOUNT_TAIL_RE, "").trim()
-          if (descPart) descParts.push(descPart)
+          const part = next.replace(AMOUNT_TAIL_RE, "").trim()
+          if (part) descParts.push(part)
           j++
           break
         }
 
-        // Plain continuation line
-        const trimmed = nextLine.trim()
-        if (trimmed) descParts.push(trimmed)
+        const trimmed = next.trim()
+        // Skip pure-noise lines (page numbers, dashes, etc.)
+        if (trimmed && !/^[-=]{3,}$/.test(trimmed)) {
+          descParts.push(trimmed)
+        }
         j++
       }
     }
 
-    // Only add if we found a valid amount + indicator
     if (amountStr && indicator) {
       const rawDescription = descParts.join(" ").trim()
       const amount = parseAmount(amountStr)
 
-      // Skip zero-amount lines (sometimes appear in PDF noise)
       if (amount > 0) {
         results.push({
           id: randomUUID(),
-          date: toISODate(dateStr),
+          date: toISODate(dateStr, fallbackYear),
           title: cleanDescription(rawDescription),
           amount,
           type: indicator === "CR" ? "income" : "expense",
-          suggested_category: null,   // filled later by Groq
+          suggested_category: null,
           category_id: null,
           raw_description: rawDescription,
         })
@@ -182,5 +204,46 @@ export function parseBCAStatement(rawText: string): ParsedTransaction[] {
     i = j
   }
 
+  console.log("[bca-parser] Found transactions:", results.length)
+  if (results.length > 0) {
+    console.log("[bca-parser] Sample:", JSON.stringify(results[0]))
+  }
+
+  return results
+}
+
+// ---------------------------------------------------------------------------
+// Alternative: flat-line strategy (fallback when table structure is lost)
+// ---------------------------------------------------------------------------
+// Some PDF extractors lose row structure and output everything on one long line.
+// This secondary parser handles that case.
+export function parseBCAFlatLines(rawText: string): ParsedTransaction[] {
+  const fallbackYear = extractYearFromHeader(rawText)
+  const results: ParsedTransaction[] = []
+
+  // Match: [date] [description] [amount] [DB|CR]
+  // All on one line, with flexible separators
+  const ROW_RE =
+    /(\d{2}\/\d{2}(?:\/\d{2,4})?)\s+(.+?)\s+([\d]{1,3}(?:[.,]\d{3})*(?:[.,]\d{2}))\s+(DB|CR)/gi
+
+  let match
+  while ((match = ROW_RE.exec(rawText)) !== null) {
+    const [, dateStr, desc, amountRaw, indicator] = match
+    const amount = parseAmount(amountRaw)
+    if (amount > 0) {
+      results.push({
+        id: randomUUID(),
+        date: toISODate(dateStr, fallbackYear),
+        title: cleanDescription(desc.trim()),
+        amount,
+        type: indicator.toUpperCase() === "CR" ? "income" : "expense",
+        suggested_category: null,
+        category_id: null,
+        raw_description: desc.trim(),
+      })
+    }
+  }
+
+  console.log("[bca-parser:flat] Found transactions:", results.length)
   return results
 }

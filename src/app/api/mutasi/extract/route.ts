@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
-import { parseBCAStatement } from "@/features/finance/parsers/bca-parser"
+import { parseBCAStatement, parseBCAFlatLines } from "@/features/finance/parsers/bca-parser"
 import type { ParsedTransaction, SupportedBank } from "@/features/finance/types"
 
 // Force Node.js runtime for buffer/file processing (required for unpdf)
@@ -272,13 +272,27 @@ export async function POST(req: NextRequest) {
     // --- 6. Parse according to bank format ---
     if (bank === "bca") {
       transactions = parseBCAStatement(text)
+
+      // Fallback: if line-by-line parser found nothing, try flat-line strategy
+      if (transactions.length === 0) {
+        console.log("[mutasi/extract] Line parser found 0 results, trying flat-line fallback...")
+        transactions = parseBCAFlatLines(text)
+      }
     }
 
     if (transactions.length === 0) {
+      // Return more of the raw text so we can debug the actual format
+      const lineCount = text.split("\n").length
       return NextResponse.json(
         {
           error: "Tidak ditemukan transaksi dalam file ini. Pastikan ini adalah mutasi rekening BCA yang valid.",
-          raw_preview: text.slice(0, 200),
+          debug: {
+            pages: pagesCount,
+            total_chars: text.length,
+            total_lines: lineCount,
+            raw_preview: text.slice(0, 2000),
+            lines_preview: text.split("\n").slice(0, 50),
+          },
         },
         { status: 422 }
       )
