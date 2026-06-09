@@ -158,7 +158,8 @@ export function MutasiImportModal({ categories, userId, onClose, onImported }: P
       type: r.type,
       category_id: r.category_id || null,
       transaction_date: r.date || today,
-      notes: `[Mutasi BCA] ${r.raw_description.slice(0, 120)}`,
+      notes: "[Import BCA]",
+
     }))
 
     const { data, error: insertError } = await supabase
