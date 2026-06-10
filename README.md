@@ -1,6 +1,21 @@
+<div align="center">
+
 # kekayaan.id — Personal Wealth Cockpit
 
-> Aplikasi manajemen keuangan pribadi berbasis Next.js dengan siklus billing 25–24 dan laporan PDF otomatis.
+**Aplikasi manajemen keuangan pribadi berbasis Next.js dengan siklus billing 25–24, ekstraksi mutasi rekening otomatis, dan laporan PDF profesional.**
+
+---
+
+![Next.js](https://img.shields.io/badge/Next.js_16-000000?style=for-the-badge&logo=nextdotjs&logoColor=white)
+![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white)
+![React](https://img.shields.io/badge/React_19-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS_v4-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white)
+![Supabase](https://img.shields.io/badge/Supabase-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white)
+![Prisma](https://img.shields.io/badge/Prisma-2D3748?style=for-the-badge&logo=prisma&logoColor=white)
+![Vercel](https://img.shields.io/badge/Vercel-000000?style=for-the-badge&logo=vercel&logoColor=white)
+![Groq](https://img.shields.io/badge/Groq_AI-F55036?style=for-the-badge&logo=groq&logoColor=white)
+
+</div>
 
 ---
 
@@ -10,6 +25,7 @@
 |---|---|
 | **Dashboard Keuangan** | Ringkasan aset, tujuan, dan cashflow dalam satu tampilan |
 | **Expense Tracker** | Pencatatan pemasukan & pengeluaran dengan kategori |
+| **🆕 Ekstraksi Mutasi BCA** | Import transaksi otomatis dari PDF mutasi mBCA dengan AI |
 | **Siklus 25–24** | Timeline billing dari tanggal 25 tiap bulan sampai 24 bulan berikutnya |
 | **Pilih Periode** | Filter siklus berdasarkan bulan & tahun, navigasi antar periode |
 | **Grafik Arus Kas** | Bar chart harian pemasukan vs pengeluaran |
@@ -24,19 +40,58 @@
 
 ---
 
+## 🏦 Ekstraksi Mutasi Rekening (Baru!)
+
+Upload PDF mutasi rekening BCA langsung dari halaman Finance. Transaksi diekstraksi otomatis menggunakan AI dan ditampilkan sebagai tabel review interaktif sebelum diimport.
+
+**Alur kerja:**
+1. Klik **"Import Mutasi"** di halaman Finance
+2. Upload PDF mutasi mBCA (drag & drop atau pilih file)
+3. Review tabel preview — edit tanggal, keterangan, nominal, kategori
+4. Hapus baris yang tidak perlu
+5. Klik **"Import X Transaksi"** — data langsung masuk ke Expense Tracker
+
+**Bank yang didukung:**
+| Bank | Format | Status |
+|---|---|---|
+| BCA | mBCA e-Statement PDF | ✅ Aktif |
+| Mandiri | - | 🔜 Segera |
+| BRI | - | 🔜 Segera |
+
+---
+
+## 🔒 Privacy & Security
+
+Keamanan data kamu adalah prioritas utama:
+
+- **File PDF tidak pernah disimpan** — hanya diproses di memory server sesaat, langsung dihapus setelah ekstraksi selesai
+- **AI category suggestion** menggunakan Groq API (server-side only) — file PDF tidak dikirim ke Groq; hanya teks deskripsi transaksi yang dikirim untuk klasifikasi kategori
+- **Rate limiting** — maksimum 3x ekstraksi per hari per akun
+- **Auth required** — semua endpoint API dilindungi Supabase session
+- **RLS (Row Level Security)** — user hanya bisa akses dan insert data milik sendiri
+- **API key server-only** — tidak pernah terekspos ke browser/client
+
+---
+
 ## 🛠 Tech Stack
 
-- **Framework**: [Next.js 16](https://nextjs.org/) (App Router)
-- **Auth & Database**: [Supabase](https://supabase.com/)
-- **ORM**: [Prisma](https://www.prisma.io/)
-- **Styling**: [Tailwind CSS v4](https://tailwindcss.com/)
-- **UI Components**: [shadcn/ui](https://ui.shadcn.com/)
-- **Charts**: [Recharts](https://recharts.org/)
-- **PDF Export**: [jsPDF](https://github.com/parallax/jsPDF) + [jspdf-autotable](https://github.com/simonbengtsson/jsPDF-AutoTable)
-- **Forms**: [React Hook Form](https://react-hook-form.com/) + [Zod](https://zod.dev/)
-- **State**: [Zustand](https://zustand-demo.pmnd.rs/)
-- **Icons**: [Lucide React](https://lucide.dev/)
-- **Date Utils**: [date-fns](https://date-fns.org/)
+| Layer | Teknologi |
+|---|---|
+| **Framework** | [Next.js 16](https://nextjs.org/) (App Router, Turbopack) |
+| **Language** | [TypeScript 5](https://www.typescriptlang.org/) |
+| **Auth & Database** | [Supabase](https://supabase.com/) (PostgreSQL + RLS) |
+| **ORM** | [Prisma](https://www.prisma.io/) |
+| **Styling** | [Tailwind CSS v4](https://tailwindcss.com/) |
+| **UI Components** | [shadcn/ui](https://ui.shadcn.com/) |
+| **Charts** | [Recharts](https://recharts.org/) |
+| **PDF Export** | [jsPDF](https://github.com/parallax/jsPDF) + [jspdf-autotable](https://github.com/simonbengtsson/jsPDF-AutoTable) |
+| **PDF Parsing** | [unpdf](https://github.com/unjs/unpdf) (serverless-safe) |
+| **AI Suggestion** | [Groq API](https://groq.com/) (Llama 3.3 70B) — server-only |
+| **Forms** | [React Hook Form](https://react-hook-form.com/) + [Zod](https://zod.dev/) |
+| **State** | [Zustand](https://zustand-demo.pmnd.rs/) |
+| **Icons** | [Lucide React](https://lucide.dev/) |
+| **Date Utils** | [date-fns](https://date-fns.org/) |
+| **Deployment** | [Vercel](https://vercel.com/) |
 
 ---
 
@@ -47,7 +102,7 @@
 - Node.js 18+
 - npm / pnpm
 - Supabase project
-- PostgreSQL (via Supabase or local)
+- Groq API Key (gratis di [console.groq.com](https://console.groq.com))
 
 ### Setup
 
@@ -69,13 +124,20 @@ Edit `.env.local`:
 NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
 DATABASE_URL=your_database_connection_string
+
+# Untuk fitur Ekstraksi Mutasi (AI category suggestion)
+GROQ_API_KEY=your_groq_api_key
 ```
 
 ```bash
 # 4. Generate Prisma client
 npx prisma generate
 
-# 5. Run development server
+# 5. Run Supabase migrations (termasuk tabel mutasi_usage)
+# Jalankan SQL dari: src/lib/supabase/migrations/add_mutasi_usage.sql
+# di Supabase SQL Editor
+
+# 6. Run development server
 npm run dev
 ```
 
@@ -90,20 +152,28 @@ src/
 ├── app/
 │   ├── (auth)/          # Login, Register, Forgot/Reset Password
 │   ├── (dashboard)/     # Dashboard, Finance, Assets, Goals, Settings
+│   ├── api/
+│   │   ├── mutasi/
+│   │   │   └── extract/ # POST — Ekstraksi PDF mutasi (auth + rate limit)
+│   │   └── dashboard/   # History chart data
 │   └── auth/            # Supabase auth callback
 ├── components/
 │   ├── providers/       # AppPreferences, Supabase providers
-│   ├── settings/        # SettingsPanel (termasuk Change Password)
+│   ├── settings/        # SettingsPanel
 │   └── ui/              # shadcn/ui components
 ├── features/
 │   └── finance/
-│       ├── components/  # FinanceClient, PdfExportModal, dll
-│       ├── pdf-export.ts # Generator PDF laporan cashflow
-│       ├── types.ts
-│       └── utils.ts     # Cycle calculation, summarize transactions
+│       ├── components/  # FinanceClient, PdfExportModal, MutasiImportModal
+│       ├── parsers/
+│       │   └── bca-parser.ts  # Regex parser untuk mutasi BCA
+│       ├── pdf-export.ts
+│       ├── types.ts     # FinanceTransaction, ParsedTransaction, ...
+│       └── utils.ts
 └── lib/
-    ├── supabase/        # Client & Server helpers
-    └── utils.ts
+    ├── supabase/
+    │   ├── migrations/  # SQL migration: mutasi_usage table
+    │   └── ...
+    └── utils/
 ```
 
 ---

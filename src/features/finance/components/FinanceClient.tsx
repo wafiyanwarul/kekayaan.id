@@ -53,6 +53,7 @@ import type {
   FinanceViewMode,
 } from "../types"
 import { TransactionFormModal } from "./TransactionFormModal"
+import { MutasiImportModal } from "./MutasiImportModal"
 
 interface Props {
   cycle: FinanceCycle
@@ -106,6 +107,7 @@ export function FinanceClient({ cycle, initialCategories, initialTransactions, u
   const [selectedCycleIndex, setSelectedCycleIndex] = useState(0)
   const [showCycleDropdown, setShowCycleDropdown] = useState(false)
   const [dropdownYear, setDropdownYear] = useState<number>(() => new Date().getFullYear())
+  const [showMutasiModal, setShowMutasiModal] = useState(false)
 
   const availableCycles = useMemo(() => getAvailableCycles(transactions, cycle), [transactions, cycle])
   const selectedCycle = availableCycles[selectedCycleIndex] ?? availableCycles[0]
@@ -393,12 +395,11 @@ export function FinanceClient({ cycle, initialCategories, initialTransactions, u
           />
           <button
             type="button"
-            disabled
-            className="inline-flex items-center gap-2 rounded-lg border border-[#1e2235] px-4 py-2 text-sm font-medium text-slate-500 opacity-70 cursor-not-allowed"
-            title="Fitur ekstraksi mutasi PDF akan ditambahkan nanti"
+            onClick={() => setShowMutasiModal(true)}
+            className="inline-flex items-center gap-2 rounded-lg border border-indigo-500/40 bg-indigo-500/10 px-4 py-2 text-sm font-medium text-indigo-300 transition hover:bg-indigo-500/20 hover:text-indigo-200 cursor-pointer"
           >
             <FileText className="h-4 w-4" />
-            Import Mutasi PDF
+            Import Mutasi
           </button>
           <button
             type="button"
@@ -512,26 +513,31 @@ export function FinanceClient({ cycle, initialCategories, initialTransactions, u
           </div>
         </div>
 
-        <div className="rounded-xl border bg-card p-5">
-          <div className="flex items-center gap-2 mb-1">
-            <FileText className="h-4 w-4 text-slate-500" />
-            <h3 className="text-sm font-bold uppercase tracking-wider text-white">Ekstraksi Mutasi</h3>
+        <div className="rounded-xl border border-indigo-500/20 bg-gradient-to-br from-[#0f1117] to-indigo-950/20 p-5">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-indigo-500/15">
+                <FileText className="h-3.5 w-3.5 text-indigo-400" />
+              </div>
+              <h3 className="text-sm font-bold uppercase tracking-wider text-white">Ekstraksi Mutasi</h3>
+            </div>
+            <span className="rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-emerald-400">Aktif</span>
           </div>
-          <p className="text-[13px] text-slate-400 mb-4">Import otomatis dari PDF mutasi rekening</p>
-          <div className="mt-4 rounded-lg border border-dashed border-[#2a2f45] bg-[#0f1117]/60 p-4">
-            <FileText className="mb-3 h-6 w-6 text-slate-500" />
-            <p className="text-sm font-semibold text-slate-300">Preview PDF mutasi rekening</p>
-            <p className="mt-1 text-xs leading-5 text-slate-500">
-              Nanti hasil ekstraksi akan muncul sebagai tabel preview untuk cek tanggal, kategori, nominal, hapus baris, lalu confirm ke data keuangan.
-            </p>
-            <button
-              type="button"
-              disabled
-              className="mt-4 w-full rounded-lg bg-slate-700/60 py-2 text-sm font-medium text-slate-500 cursor-not-allowed"
-            >
-              Belum aktif
-            </button>
+          <p className="text-[13px] text-slate-400 mb-4">Import otomatis dari PDF mutasi rekening bank</p>
+          <div className="mb-4 flex flex-wrap gap-1.5">
+            <span className="rounded-md border border-[#1e2235] bg-[#1a1d2e] px-2.5 py-1 text-[11px] font-semibold text-slate-300">🏦 BCA</span>
+            <span className="rounded-md border border-dashed border-[#2a2f45] px-2.5 py-1 text-[11px] text-slate-600">+ bank lain segera</span>
           </div>
+          <div className="mb-3 rounded-lg border border-emerald-500/20 bg-emerald-500/5 px-3 py-2">
+            <p className="text-[11px] text-emerald-400">🔒 File tidak disimpan — diproses di memory server saja</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setShowMutasiModal(true)}
+            className="w-full rounded-xl bg-indigo-600/80 py-2.5 text-sm font-bold text-white transition hover:bg-indigo-600 cursor-pointer"
+          >
+            Import Mutasi PDF
+          </button>
         </div>
       </div>
 
@@ -690,6 +696,18 @@ export function FinanceClient({ cycle, initialCategories, initialTransactions, u
             setEditingTransaction(null)
           }}
           onSaved={handleSaved}
+        />
+      )}
+
+      {showMutasiModal && (
+        <MutasiImportModal
+          categories={categories}
+          userId={userId}
+          onClose={() => setShowMutasiModal(false)}
+          onImported={(newTransactions) => {
+            setTransactions((current) => sortTransactions([...newTransactions, ...current]))
+            setShowMutasiModal(false)
+          }}
         />
       )}
 
