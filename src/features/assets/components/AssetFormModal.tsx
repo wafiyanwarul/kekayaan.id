@@ -1,7 +1,9 @@
 "use client"
 import { useState } from "react"
+import { X } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 import { ASSET_CATEGORIES } from "@/lib/constants"
+import { StyledSelect } from "@/features/finance/components/StyledSelect"
 
 interface Asset {
   id: string; user_id: string; name: string; category: string
@@ -52,83 +54,89 @@ export function AssetFormModal({ userId, asset, onClose, onSaved }: Props) {
     }
   }
 
+  const inputCls = "w-full px-3 py-2 text-sm rounded-lg bg-[#0f1117] border border-[#1e2235] text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 hover:border-indigo-500/60 transition"
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-      <div className="w-full max-w-md bg-[#1a1d2e] border border-[#1e2235] rounded-2xl p-6 space-y-5">
-        <div className="flex items-center justify-between">
-          <h2 className="text-lg font-bold text-white">{isEdit ? "Edit Aset" : "Tambah Aset"}</h2>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 bg-black/60 backdrop-blur-sm">
+      <div className="w-full max-w-[400px] bg-[#1a1d2e] border border-[#1e2235] rounded-2xl p-4 shadow-2xl max-h-[92vh] overflow-y-auto">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-base font-bold text-white">{isEdit ? "Edit Aset" : "Tambah Aset"}</h2>
           <button
             type="button"
             onClick={onClose}
-            className="text-slate-400 hover:text-red-300 text-xl leading-none transition cursor-pointer"
+            className="rounded-lg p-1 text-slate-400 transition hover:bg-red-500/15 hover:text-red-200 cursor-pointer"
             aria-label="Tutup"
           >
-            ×
+            <X className="h-4 w-4" />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-1.5">
-            <label className="text-sm font-medium text-slate-300">Nama Aset</label>
-            <input value={name} onChange={e => setName(e.target.value)} placeholder="cth: BCA Tabungan" required
-              className="w-full px-4 py-2.5 rounded-lg bg-[#0f1117] border border-[#1e2235] text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition" />
+        <form onSubmit={handleSubmit} className="space-y-3">
+          <div className="space-y-1">
+            <label className="text-xs font-medium text-slate-300">Nama Aset</label>
+            <input value={name} onChange={e => setName(e.target.value)} placeholder="cth: BCA Tabungan" required className={inputCls} />
           </div>
 
-          <div className="space-y-1.5">
-            <label className="text-sm font-medium text-slate-300">Kategori</label>
-            <select value={category} onChange={e => handleCategoryChange(e.target.value)}
-              className="w-full px-4 py-2.5 rounded-lg bg-[#0f1117] border border-[#1e2235] text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition">
-              <optgroup label="💧 Likuid">
-                {ASSET_CATEGORIES.liquid.map(c => <option key={c} value={c}>{c.replace("_", " ")}</option>)}
-              </optgroup>
-              <optgroup label="🏗️ Non-Likuid">
-                {ASSET_CATEGORIES.non_liquid.map(c => <option key={c} value={c}>{c.replace("_", " ")}</option>)}
-              </optgroup>
-            </select>
+          <div className="space-y-1">
+            <label className="text-xs font-medium text-slate-300">Kategori</label>
+            <StyledSelect
+              value={category}
+              onChange={handleCategoryChange}
+              maxHeight={180}
+              groups={[
+                {
+                  label: "💧 Likuid",
+                  options: ASSET_CATEGORIES.liquid.map(c => ({ value: c, label: c.replace("_", " ") })),
+                },
+                {
+                  label: "🏗️ Non-Likuid",
+                  options: ASSET_CATEGORIES.non_liquid.map(c => ({ value: c, label: c.replace("_", " ") })),
+                },
+              ]}
+            />
           </div>
 
-          <div className="space-y-1.5">
-            <label className="text-sm font-medium text-slate-300">Nilai Saat Ini (Rp)</label>
-            <input type="number" value={value} onChange={e => setValue(e.target.value)} placeholder="cth: 10000000" required min="0"
-              className="w-full px-4 py-2.5 rounded-lg bg-[#0f1117] border border-[#1e2235] text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition" />
+          <div className="space-y-1">
+            <label className="text-xs font-medium text-slate-300">Nilai Saat Ini (Rp)</label>
+            <input type="number" value={value} onChange={e => setValue(e.target.value)} placeholder="cth: 10000000" required min="0" className={inputCls} />
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 py-1">
             <button
               type="button"
               role="switch"
               aria-checked={isLiquid}
               onClick={() => setIsLiquid(!isLiquid)}
-              className={`relative h-7 w-14 shrink-0 rounded-full border transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-[#1a1d2e] ${
+              className={`relative h-6 w-12 shrink-0 rounded-full border transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-[#1a1d2e] ${
                 isLiquid
                   ? "border-indigo-400 bg-indigo-600 hover:bg-indigo-500"
                   : "border-slate-400 bg-slate-600 hover:bg-slate-500"
               }`}
             >
               <span
-                className={`absolute left-0.5 top-0.5 h-6 w-6 rounded-full bg-white shadow transition-transform ${
-                  isLiquid ? "translate-x-7" : "translate-x-0"
+                className={`absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${
+                  isLiquid ? "translate-x-6" : "translate-x-0"
                 }`}
               />
             </button>
             <span className="text-sm text-slate-300">{isLiquid ? "Aset Likuid" : "Aset Non-Likuid"}</span>
           </div>
 
-          <div className="space-y-1.5">
-            <label className="text-sm font-medium text-slate-300">Catatan <span className="text-slate-500">(opsional)</span></label>
+          <div className="space-y-1">
+            <label className="text-xs font-medium text-slate-300">Catatan <span className="text-slate-500">(opsional)</span></label>
             <textarea value={notes} onChange={e => setNotes(e.target.value)} placeholder="cth: dibeli Jan 2025" rows={2}
-              className="w-full px-4 py-2.5 rounded-lg bg-[#0f1117] border border-[#1e2235] text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition resize-none" />
+              className={`${inputCls} resize-none`} />
           </div>
 
-          {error && <p className="text-sm text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg px-4 py-2.5">{error}</p>}
+          {error && <p className="text-xs text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2">{error}</p>}
 
-          <div className="flex gap-3 pt-1">
+          <div className="flex gap-2 pt-1">
             <button type="button" onClick={onClose}
-              className="flex-1 py-2.5 rounded-lg border border-[#1e2235] text-slate-300 hover:border-red-500/50 hover:bg-red-500/15 hover:text-red-200 text-sm font-medium transition cursor-pointer">
+              className="flex-1 py-2 rounded-lg border border-[#1e2235] text-slate-300 hover:border-red-500/50 hover:bg-red-500/15 hover:text-red-200 text-sm font-medium transition cursor-pointer">
               Batal
             </button>
             <button type="submit" disabled={loading}
-              className="flex-1 py-2.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-semibold transition cursor-pointer">
+              className="flex-1 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-semibold transition cursor-pointer">
               {loading ? "Menyimpan..." : isEdit ? "Simpan Perubahan" : "Tambah Aset"}
             </button>
           </div>

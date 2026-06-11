@@ -13,59 +13,105 @@ const ALLOWED_MIME_TYPES = ["application/pdf"]
 const SUPPORTED_BANKS: SupportedBank[] = ["bca"]
 
 // --- Groq category suggestion ---
-const CATEGORY_KEYWORDS: Record<string, string> = {
-  grab: "Transportasi",
-  gojek: "Transportasi",
-  "go-jek": "Transportasi",
-  maxim: "Transportasi",
-  indomaret: "Belanja",
-  alfamart: "Belanja",
-  shopee: "Belanja",
-  tokopedia: "Belanja",
-  lazada: "Belanja",
-  spotify: "Langganan",
-  netflix: "Langganan",
-  youtube: "Langganan",
-  apple: "Langganan",
-  "biaya adm": "Administrasi",
-  "admin": "Administrasi",
-  "trf": "Transfer",
-  "transfer": "Transfer",
-  "waroeng": "Makanan & Minuman",
-  "warung": "Makanan & Minuman",
-  "bakso": "Makanan & Minuman",
-  "makan": "Makanan & Minuman",
-  "kfc": "Makanan & Minuman",
-  "mcd": "Makanan & Minuman",
-  "mcdonalds": "Makanan & Minuman",
-  "tokaf": "Makanan & Minuman",
-  "toko alfi": "Makanan & Minuman",
-  "alfi": "Makanan & Minuman",
-  "alfanow": "Makanan & Minuman",
-  "investasi": "Investasi",
-  "bibit": "Investasi",
-  "ajaib": "Investasi",
-  "bareksa": "Investasi",
-  "pdam": "Tagihan",
-  "pln": "Tagihan",
-  "listrik": "Tagihan",
-  "indihome": "Tagihan",
-  "wifi": "Tagihan",
-  "internet": "Tagihan",
-  "telkomsel": "Tagihan",
-  "xl": "Tagihan",
-  "axis": "Tagihan",
-  "im3": "Tagihan",
-}
+// Ordered from most specific to most generic.
+// First match wins. Use lowercase; partial matching is applied.
+const CATEGORY_RULES: Array<{ keywords: string[]; category: string }> = [
+  // ── Investasi ─────────────────────────────────────────────
+  {
+    keywords: ["bibit", "ajaib", "bareksa", "stockbit", "pluang", "indodax", "pintu", "reksadana", "mutual fund", "saham", "invest"],
+    category: "Investasi",
+  },
+  // ── Tagihan / Langganan ──────────────────────────────────
+  {
+    keywords: ["spotify", "netflix", "youtube premium", "youtube music", "disney+", "disney plus", "prime video", "apple tv", "hbo", "vidio", "mola tv", "vision+", "canva pro", "notion", "chatgpt", "openai", "github", "figma", "adobe"],
+    category: "Langganan",
+  },
+  {
+    keywords: ["pln", "pdam", "listrik", "air bersih", "indihome", "myrepublic", "biznet", "firstmedia", "wifi", "internet", "telkomsel", "xl axiata", "axis", "smartfren", "tri ", " tri ", "im3", "indosat", "bolt", "by.u", "byku", "loop"],
+    category: "Tagihan",
+  },
+  // ── Top-up / e-Wallet ────────────────────────────────────
+  {
+    keywords: ["top up", "topup", "top-up", "isi saldo", "isi ulang", "pulsa", "paket data", "reload", "recharge"],
+    category: "Top-up & Pulsa",
+  },
+  {
+    keywords: ["gopay", "ovo ", " ovo", "dana ", " dana", "linkaja", "jenius", "shopeepay", "spay", "sakuku", "flazz", "tapcash", "brizzi", "emoney", "e-money", "dompet digital"],
+    category: "Top-up & Pulsa",
+  },
+  // ── Transportasi ─────────────────────────────────────────
+  {
+    keywords: ["grab", "gojek", "go-jek", "maxim", "indriver", "ojek", "gocar", "gomotor", "grabcar", "grabmotor", "grabbike", "goride", "bluebird", "taxix", "transjakarta", "commuter", "mrt", "lrt", "kereta", "kai ", "bus", "bensin", "bbm", "pertamina", "shell", "spbu", "parkir", "tol"],
+    category: "Transportasi",
+  },
+  // ── Makanan & Minuman ─────────────────────────────────────
+  // Online delivery first
+  {
+    keywords: ["gofood", "grabfood", "shopeefood", "shopee food", "traveloka eats", "kfc", "mcdonalds", "mcd ", "mc d", "burger king", "wendy's", "wendys", "domino", "pizza hut", "pizzahut", "hokben", "hoka hoka", "starbucks", "chatime", "kopi kenangan", "fore coffee", "kopitiam", "es teh", "boba", "mixue", "thai tea"],
+    category: "Makanan & Minuman",
+  },
+  // Warung / local food
+  {
+    keywords: [
+      "waroeng", "warung", "warteg", "warug",
+      "makan", "sarapan", "makan siang", "makan malam", "santap",
+      "nasi", "mie", "bakso", "soto", "ayam", "pecel", "lalapan", "padang", "sunda", "seafood",
+      "pisang", "buah", "snack", "jajan", "kue", "gorengan", "siomay", "batagor",
+      "kopi", "teh ", "minuman", "juice", "jus", "es ", "cafe", "cafeteria", "kantin",
+      "restoran", "restaurant", "rumah makan", "rm ", "depot",
+      "alfanow", "toko alfi", "toko a", "alfanow",
+    ],
+    category: "Makanan & Minuman",
+  },
+  // ── Belanja ───────────────────────────────────────────────
+  {
+    keywords: ["shopee", "tokopedia", "lazada", "blibli", "bukalapak", "tiktok shop", "zalora", "sociolla", "jd.id", "sendo"],
+    category: "Belanja Online",
+  },
+  {
+    keywords: ["indomaret", "alfamart", "alfamidi", "superindo", "hero ", "giant", "hypermart", "carrefour", "lottemart", "transmart", "indogrosir", "yogya", "ramayana", "matahari", "ace hardware", "ikea", "uniqlo", "h&m", "zara", "guardian", "watson", "century", "k24"],
+    category: "Belanja",
+  },
+  // ── Kesehatan ─────────────────────────────────────────────
+  {
+    keywords: ["apotek", "apotik", "kimia farma", "guardian", "halodoc", "alodokter", "klinik", "rumah sakit", "puskesmas", "dokter", "obat", "vitamin", "suplemen", "laboratorium", "lab ", "rontgen", "bpjs"],
+    category: "Kesehatan",
+  },
+  // ── Hiburan ───────────────────────────────────────────────
+  {
+    keywords: ["bioskop", "cgv", "cinepolis", "xxi", "21 ", "cinema", "game", "gaming", "steam", "playstation", "nintendo", "xbox", "konser", "event", "ticket", "tiket"],
+    category: "Hiburan",
+  },
+  // ── Administrasi / Bank ───────────────────────────────────
+  {
+    keywords: ["biaya adm", "biaya admin", "admin bank", "biaya bulanan", "biaya transfer", "provisi", "denda", "penalti", "materai"],
+    category: "Administrasi",
+  },
+  // ── Transfer / Kirim Uang ────────────────────────────────
+  {
+    keywords: ["transfer", "trsf", "trf ke", "kirim ke", "kirim uang", "remitansi", "remittance"],
+    category: "Transfer",
+  },
+  // ── Pendidikan ────────────────────────────────────────────
+  {
+    keywords: ["spp", "ukt", "kuliah", "sekolah", "les ", "kursus", "bimbel", "ruangguru", "zenius", "udemy", "coursera", "skillshare", "dicoding", "edutech"],
+    category: "Pendidikan",
+  },
+]
 
 /**
- * Lightweight local category suggestion (no AI needed).
- * Falls back to Groq AI if no local keyword matches.
+ * Lightweight local category suggestion.
+ * Uses ordered rules — first match wins.
+ * Falls back to Groq AI if nothing matches.
  */
 function suggestCategoryLocal(title: string): string | null {
   const lower = title.toLowerCase()
-  for (const [keyword, category] of Object.entries(CATEGORY_KEYWORDS)) {
-    if (lower.includes(keyword)) return category
+  for (const rule of CATEGORY_RULES) {
+    for (const kw of rule.keywords) {
+      if (lower.includes(kw.trim().toLowerCase())) {
+        return rule.category
+      }
+    }
   }
   return null
 }
@@ -104,14 +150,35 @@ async function suggestCategoriesWithGroq(
       messages: [
         {
           role: "system",
-          content: `Kamu adalah AI yang mengkategorikan transaksi keuangan Indonesia.
-Berikan satu kategori untuk setiap transaksi dari daftar berikut:
-["Makanan & Minuman","Transportasi","Belanja","Langganan","Administrasi","Transfer","Investasi","Tagihan","Kesehatan","Hiburan","Pendidikan","Lainnya"]
-Balas HANYA dengan JSON: { "results": [ { "id": "...", "category": "..." }, ... ] }`,
+          content: `Kamu adalah AI yang mengkategorikan transaksi keuangan perbankan Indonesia dari mutasi rekening BCA.
+
+DAFTAR KATEGORI yang tersedia (pilih SATU yang paling tepat):
+- "Makanan & Minuman" → warung, warteg, waroeng, restoran, kafe, jajan, makan, nasi, mie, bakso, soto, pisang, buah, gorengan, es, kopi, minuman, delivery makanan
+- "Transportasi" → Grab, Gojek, ojek online, parkir, bensin, BBM, tol, kereta, bus, taksi
+- "Belanja" → Indomaret, Alfamart, supermarket, minimarket, online shop lokal
+- "Belanja Online" → Shopee, Tokopedia, Lazada, Blibli, Bukalapak, TikTok Shop
+- "Langganan" → Spotify, Netflix, YouTube Premium, Disney+, Apple, iCloud, SaaS apps, aplikasi berlangganan
+- "Tagihan" → PLN, PDAM, listrik, air, internet, Wi-Fi, pulsa, paket data, Indihome, Telkomsel, XL, BPJS
+- "Top-up & Pulsa" → GoPay, OVO, DANA, LinkAja, ShopeePay, dompet digital, top-up saldo, isi ulang pulsa
+- "Investasi" → Bibit, Ajaib, Bareksa, Stockbit, saham, reksa dana, crypto
+- "Kesehatan" → apotek, klinik, rumah sakit, obat, vitamin, dokter, lab
+- "Hiburan" → bioskop, game, konser, tiket event, CGV, XXI
+- "Administrasi" → biaya admin bank, provisi, denda, materai
+- "Transfer" → transfer ke rekening lain, kirim uang
+- "Pendidikan" → SPP, kursus, bimbel, aplikasi belajar
+- "Lainnya" → jika benar-benar tidak bisa diklasifikasikan
+
+ATURAN PENTING:
+1. Nama tempat dengan awalan "Waroeng", "Warung", "Warteg", atau kata makanan lokal → "Makanan & Minuman"
+2. Nama dengan kata "Grab" atau "Gojek" tanpa konteks makanan → "Transportasi"
+3. Topup e-wallet (GoPay, OVO, DANA, dsb) → "Top-up & Pulsa"
+4. Biaya admin/administrasi bank → "Administrasi"
+5. Jangan pernah memilih "Lainnya" jika ada kategori yang masuk akal
+6. Balas HANYA dengan JSON: { "results": [ { "id": "...", "category": "..." }, ... ] }`,
         },
         {
           role: "user",
-          content: `Kategorikan transaksi berikut:\n${prompt}`,
+          content: `Kategorikan transaksi berikut (gunakan raw_desc sebagai konteks tambahan jika tersedia):\n${prompt}`,
         },
       ],
     })

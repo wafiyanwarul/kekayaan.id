@@ -1,6 +1,9 @@
 "use client"
 import { useState } from "react"
+import { X } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
+import { DatePicker } from "@/features/finance/components/DatePicker"
+import { StyledSelect } from "@/features/finance/components/StyledSelect"
 
 interface Goal {
   id: string
@@ -21,12 +24,12 @@ interface Props {
 }
 
 export const GOAL_TYPES = [
-  { value: "savings", label: "Tabungan 💰" },
-  { value: "investment", label: "Investasi 📈" },
-  { value: "purchase", label: "Pembelian Barang 🛒" },
-  { value: "debt_reduction", label: "Pelunasan Utang 💳" },
-  { value: "travel", label: "Liburan & Travel ✈️" },
-  { value: "other", label: "Lainnya 🎯" },
+  { value: "savings",       label: "Tabungan 💰" },
+  { value: "investment",    label: "Investasi 📈" },
+  { value: "purchase",      label: "Pembelian Barang 🛒" },
+  { value: "debt_reduction",label: "Pelunasan Utang 💳" },
+  { value: "travel",        label: "Liburan & Travel ✈️" },
+  { value: "other",         label: "Lainnya 🎯" },
 ]
 
 export function GoalFormModal({ userId, goal, onClose, onSaved }: Props) {
@@ -62,11 +65,7 @@ export function GoalFormModal({ userId, goal, onClose, onSaved }: Props) {
         .select()
         .single()
 
-      if (error) {
-        setError(error.message)
-        setLoading(false)
-        return
-      }
+      if (error) { setError(error.message); setLoading(false); return }
       onSaved(data as Goal, true)
     } else {
       const { data, error } = await supabase
@@ -75,72 +74,68 @@ export function GoalFormModal({ userId, goal, onClose, onSaved }: Props) {
         .select()
         .single()
 
-      if (error) {
-        setError(error.message)
-        setLoading(false)
-        return
-      }
+      if (error) { setError(error.message); setLoading(false); return }
       onSaved(data as Goal, false)
     }
   }
 
+  const inputCls = "w-full px-3 py-2 text-sm rounded-lg bg-[#0f1117] border border-[#1e2235] text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 hover:border-indigo-500/60 transition"
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-      <div className="w-full max-w-md bg-[#1a1d2e] border border-[#1e2235] rounded-2xl p-6 space-y-5 shadow-2xl">
-        <div className="flex items-center justify-between">
-          <h2 className="text-lg font-bold text-white">{isEdit ? "Edit Target Keuangan" : "Tambah Target Baru"}</h2>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 bg-black/60 backdrop-blur-sm">
+      <div className="w-full max-w-[400px] bg-[#1a1d2e] border border-[#1e2235] rounded-2xl p-4 shadow-2xl max-h-[92vh] overflow-y-auto">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-base font-bold text-white">
+            {isEdit ? "Edit Target Keuangan" : "Tambah Target Baru"}
+          </h2>
           <button
             type="button"
             onClick={onClose}
-            className="text-slate-400 hover:text-red-300 text-xl leading-none transition cursor-pointer"
+            className="rounded-lg p-1 text-slate-400 transition hover:bg-red-500/15 hover:text-red-200 cursor-pointer"
             aria-label="Tutup"
           >
-            ×
+            <X className="h-4 w-4" />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-1.5">
-            <label className="text-sm font-medium text-slate-300">Nama Target</label>
+        <form onSubmit={handleSubmit} className="space-y-3">
+          {/* Nama target */}
+          <div className="space-y-1">
+            <label className="text-xs font-medium text-slate-300">Nama Target</label>
             <input
               value={title}
               onChange={e => setTitle(e.target.value)}
               placeholder="cth: DP Rumah Kontrakan"
               required
-              className="w-full px-4 py-2.5 rounded-lg bg-[#0f1117] border border-[#1e2235] text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition"
+              className={inputCls}
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-1.5">
-              <label className="text-sm font-medium text-slate-300">Tipe Target</label>
-              <select
+          {/* Tipe + Tanggal — 2 kolom */}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-slate-300">Tipe Target</label>
+              <StyledSelect
                 value={goalType}
-                onChange={e => setGoalType(e.target.value)}
-                className="w-full px-4 py-2.5 rounded-lg bg-[#0f1117] border border-[#1e2235] text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition"
-              >
-                {GOAL_TYPES.map(g => (
-                  <option key={g.value} value={g.value}>
-                    {g.label}
-                  </option>
-                ))}
-              </select>
+                onChange={setGoalType}
+                options={GOAL_TYPES}
+                maxHeight={200}
+              />
             </div>
-
-            <div className="space-y-1.5">
-              <label className="text-sm font-medium text-slate-300">Target Tanggal</label>
-              <input
-                type="date"
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-slate-300">Target Tanggal</label>
+              <DatePicker
                 value={targetDate}
-                onChange={e => setTargetDate(e.target.value)}
+                onChange={setTargetDate}
                 required
-                className="w-full px-4 py-2.5 rounded-lg bg-[#0f1117] border border-[#1e2235] text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition"
               />
             </div>
           </div>
 
-          <div className="space-y-1.5">
-            <label className="text-sm font-medium text-slate-300">Target Nominal (Rp)</label>
+          {/* Target Nominal */}
+          <div className="space-y-1">
+            <label className="text-xs font-medium text-slate-300">Target Nominal (Rp)</label>
             <input
               type="number"
               value={targetAmount}
@@ -148,12 +143,13 @@ export function GoalFormModal({ userId, goal, onClose, onSaved }: Props) {
               placeholder="cth: 25000000"
               required
               min="1"
-              className="w-full px-4 py-2.5 rounded-lg bg-[#0f1117] border border-[#1e2235] text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition"
+              className={inputCls}
             />
           </div>
 
-          <div className="space-y-1.5">
-            <label className="text-sm font-medium text-slate-300">Dana Terkumpul Saat Ini (Rp)</label>
+          {/* Dana terkumpul */}
+          <div className="space-y-1">
+            <label className="text-xs font-medium text-slate-300">Dana Terkumpul Saat Ini (Rp)</label>
             <input
               type="number"
               value={currentAmount}
@@ -161,28 +157,28 @@ export function GoalFormModal({ userId, goal, onClose, onSaved }: Props) {
               placeholder="cth: 5000000"
               required
               min="0"
-              className="w-full px-4 py-2.5 rounded-lg bg-[#0f1117] border border-[#1e2235] text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition"
+              className={inputCls}
             />
           </div>
 
           {error && (
-            <p className="text-sm text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg px-4 py-2.5">
+            <p className="text-xs text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2">
               {error}
             </p>
           )}
 
-          <div className="flex gap-3 pt-2">
+          <div className="flex gap-2 pt-1">
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 py-2.5 rounded-lg border border-[#1e2235] text-slate-300 hover:border-red-500/50 hover:bg-red-500/15 hover:text-red-200 text-sm font-medium transition cursor-pointer"
+              className="flex-1 py-2 rounded-lg border border-[#1e2235] text-slate-300 hover:border-red-500/50 hover:bg-red-500/15 hover:text-red-200 text-sm font-medium transition cursor-pointer"
             >
               Batal
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="flex-1 py-2.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-semibold transition cursor-pointer"
+              className="flex-1 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-semibold transition cursor-pointer"
             >
               {loading ? "Menyimpan..." : isEdit ? "Simpan Perubahan" : "Tambah Target"}
             </button>

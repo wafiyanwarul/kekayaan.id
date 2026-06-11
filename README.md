@@ -195,11 +195,24 @@ Isi laporan:
 
 ## 🔐 Authentication Flow
 
-1. **Register** → konfirmasi email
-2. **Login** → dengan show/hide password & "Ingat saya"
-3. **Lupa Password** → kirim email reset via Supabase
-4. **Reset Password** → klik link email → form password baru
-5. **Ubah Password** → di halaman Pengaturan (re-auth + update)
+1. **Register** &rarr; konfirmasi email
+2. **Login** &rarr; dengan show/hide password & "Ingat saya"
+3. **Lupa Password** &rarr; kirim email reset via Supabase (di halaman login) atau gunakan **Lupa Password via OTP** langsung di halaman Pengaturan
+4. **Reset Password** &rarr; klik link email &rarr; form password baru
+5. **Ubah Password** &rarr; di halaman Pengaturan (re-auth + update)
+6. **Lupa Password via OTP** &rarr; di halaman Pengaturan:
+   - Klik "Lupa password?" di kartu Ubah Password
+   - Kirim kode OTP/reset ke email yang terdaftar
+   - Masukkan kode OTP secara langsung di halaman Pengaturan untuk verifikasi
+   - Setelah diverifikasi, atur password baru secara instan tanpa perlu memasukkan password saat ini
+
+---
+
+## ⚙️ Mode Pemeliharaan & Jalur Darurat (Bypass Lockout)
+
+Aplikasi dilengkapi dengan sistem **Mode Pemeliharaan (Maintenance Mode)** global. Ketika diaktifkan oleh Administrator:
+- Seluruh pengguna biasa akan langsung dialihkan ke halaman pemeliharaan secara real-time.
+- Untuk mencegah administrator terkunci di luar sistem (**lockout**) jika tidak sengaja keluar/logout saat pemeliharaan aktif, terdapat rute pengecualian otentikasi di `src/proxy.ts` dan **Jalur Login Darurat (Admin Backdoor Login)** langsung di halaman pemeliharaan untuk mengamankan akses administratif.
 
 ---
 

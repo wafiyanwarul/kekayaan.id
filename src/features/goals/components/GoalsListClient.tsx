@@ -217,45 +217,45 @@ export function GoalsListClient({ initialGoals, userId, averageSurplus }: Props)
 
       {/* Rata-rata Surplus Info Banner */}
       <div className="space-y-3">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-xl border border-[#2e3660]/40 bg-[#181d30]/20 text-slate-300">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-xl goals-surplus-banner">
           <div className="flex items-center gap-3">
-            <Sparkles className="h-5 w-5 text-indigo-400 shrink-0" />
+            <Sparkles className="h-5 w-5 goals-surplus-sparkles shrink-0" />
             <p className="text-xs sm:text-sm">
               Surplus arus kas bulanan aktif Anda saat ini adalah{" "}
-              <span className="text-emerald-400 font-bold">{formatRupiah(averageSurplus)}</span>.
+              <span className="goals-surplus-amount font-bold">{formatRupiah(averageSurplus)}</span>.
             </p>
           </div>
           <button
             onClick={() => setShowInfo(!showInfo)}
-            className="text-xs font-semibold text-indigo-300 hover:text-indigo-200 transition cursor-pointer self-start sm:self-auto"
+            className="text-xs font-semibold goals-surplus-link transition cursor-pointer self-start sm:self-auto"
           >
             {showInfo ? "🔒 Sembunyikan Detail & Rumus" : "🔍 Rumus & Transparansi Data"}
           </button>
         </div>
 
         {showInfo && (
-          <div className="p-5 rounded-xl border border-[#1e2235] bg-[#141624]/65 text-xs text-slate-300 space-y-4 leading-relaxed">
+          <div className="p-5 rounded-xl goals-formula-container text-xs space-y-4 leading-relaxed">
             <div className="space-y-1.5">
-              <h4 className="font-bold text-white text-sm">📐 Rumus Perhitungan Target & Proyeksi:</h4>
-              <ul className="list-disc pl-5 space-y-1 text-slate-400">
+              <h4 className="font-bold goals-formula-title text-sm">📐 Rumus Perhitungan Target & Proyeksi:</h4>
+              <ul className="list-disc pl-5 space-y-1 goals-formula-bullets">
                 <li>
-                  <span className="text-white font-medium">Sisa Kekurangan</span> = Target Nominal − Dana Terkumpul
+                  <span className="goals-formula-highlight font-medium">Sisa Kekurangan</span> = Target Nominal − Dana Terkumpul
                 </li>
                 <li>
-                  <span className="text-white font-medium">Target Tabungan Bulanan</span> = Sisa Kekurangan ÷ Sisa Bulan s.d. Tanggal Target
+                  <span className="goals-formula-highlight font-medium">Target Tabungan Bulanan</span> = Sisa Kekurangan ÷ Sisa Bulan s.d. Tanggal Target
                 </li>
                 <li>
-                  <span className="text-white font-medium">Surplus Bulanan Aktif</span> = Diambil dari pencatatan transaksi di <strong>Arus Kas (Expense Tracker)</strong>. Kami hanya menghitung rata-rata dari bulan yang memiliki aktivitas transaksi agar kalkulasi pengguna baru tidak ter-dilusi oleh bulan kosong di masa lalu.
+                  <span className="goals-formula-highlight font-medium">Surplus Bulanan Aktif</span> = Diambil dari pencatatan transaksi di <strong>Arus Kas (Expense Tracker)</strong>. Kami hanya menghitung rata-rata dari bulan yang memiliki aktivitas transaksi agar kalkulasi pengguna baru tidak ter-dilusi oleh bulan kosong di masa lalu.
                 </li>
               </ul>
             </div>
 
-            <div className="space-y-1.5 border-t border-[#1e2235] pt-3">
-              <h4 className="font-bold text-white text-sm">💡 Hubungan dengan Expense Tracker & Aset:</h4>
-              <p className="text-slate-400">
+            <div className="space-y-1.5 border-t goals-formula-divider pt-3">
+              <h4 className="font-bold goals-formula-title text-sm">💡 Hubungan dengan Expense Tracker & Aset:</h4>
+              <p className="goals-formula-bullets">
                 Jika Anda mencatat alokasi tabungan target (misalnya membeli Reksa Dana Bibit atau Emas) sebagai kategori <strong>&quot;Investasi&quot;</strong> yang bertipe <strong>Pengeluaran (Expense)</strong> di Expense Tracker, maka hal tersebut secara alami akan mengurangi nilai surplus kas bulanan Anda di sistem.
               </p>
-              <p className="text-slate-400 mt-1">
+              <p className="goals-formula-bullets mt-1">
                 Namun, hal ini sepenuhnya aman! Anda dapat melacak kemajuannya secara transparan dengan memperbarui dana target di halaman ini melalui tombol <strong>+ Tabung Dana</strong> di setiap kartu untuk mencatat dana investasi/tabungan riil yang berhasil Anda sisihkan untuk goal tersebut.
               </p>
             </div>
@@ -380,7 +380,7 @@ export function GoalsListClient({ initialGoals, userId, averageSurplus }: Props)
                     <Calendar className="h-3.5 w-3.5 text-slate-500 shrink-0" />
                     <span>Target: {formatDateIndonesian(goal.target_date)}</span>
                     {!isCompleted && (
-                      <span className="text-[10px] bg-slate-800 text-slate-300 px-1.5 py-0.5 rounded-full font-medium shrink-0">
+                      <span className="text-[10px] goals-countdown-badge px-1.5 py-0.5 rounded-full font-medium shrink-0">
                         {formatRemainingTime(remainingDays)}
                       </span>
                     )}

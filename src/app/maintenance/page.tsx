@@ -142,6 +142,13 @@ export default function MaintenancePage() {
           </p>
         </div>
 
+        {/* Admin Backdoor Login Link */}
+        <div className="mt-6 text-center">
+          <a href="/login" className="text-[11px] text-slate-500 hover:text-indigo-400 transition underline underline-offset-4 decoration-slate-700 hover:decoration-indigo-400">
+            Punya hak akses administrator? Masuk di sini
+          </a>
+        </div>
+
       </div>
     </div>
   )

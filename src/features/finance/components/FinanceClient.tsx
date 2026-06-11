@@ -513,28 +513,28 @@ export function FinanceClient({ cycle, initialCategories, initialTransactions, u
           </div>
         </div>
 
-        <div className="rounded-xl border border-indigo-500/20 bg-gradient-to-br from-[#0f1117] to-indigo-950/20 p-5">
+        <div className="rounded-xl border p-5 finance-mutasi-card">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
               <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-indigo-500/15">
-                <FileText className="h-3.5 w-3.5 text-indigo-400" />
+                <FileText className="h-3.5 w-3.5 finance-mutasi-icon" />
               </div>
-              <h3 className="text-sm font-bold uppercase tracking-wider text-white">Ekstraksi Mutasi</h3>
+              <h3 className="text-sm font-bold uppercase tracking-wider finance-mutasi-title">Ekstraksi Mutasi</h3>
             </div>
-            <span className="rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-emerald-400">Aktif</span>
+            <span className="rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide finance-mutasi-badge">Aktif</span>
           </div>
-          <p className="text-[13px] text-slate-400 mb-4">Import otomatis dari PDF mutasi rekening bank</p>
+          <p className="text-[13px] finance-mutasi-subtitle mb-4">Import otomatis dari PDF mutasi rekening bank</p>
           <div className="mb-4 flex flex-wrap gap-1.5">
             <span className="rounded-md border border-[#1e2235] bg-[#1a1d2e] px-2.5 py-1 text-[11px] font-semibold text-slate-300">🏦 BCA</span>
             <span className="rounded-md border border-dashed border-[#2a2f45] px-2.5 py-1 text-[11px] text-slate-600">+ bank lain segera</span>
           </div>
-          <div className="mb-3 rounded-lg border border-emerald-500/20 bg-emerald-500/5 px-3 py-2">
-            <p className="text-[11px] text-emerald-400">🔒 File tidak disimpan — diproses di memory server saja</p>
+          <div className="mb-3 rounded-lg border px-3 py-2 finance-mutasi-security">
+            <p className="text-[11px] finance-mutasi-security-text">🔒 File tidak disimpan — diproses di memory server saja</p>
           </div>
           <button
             type="button"
             onClick={() => setShowMutasiModal(true)}
-            className="w-full rounded-xl bg-indigo-600/80 py-2.5 text-sm font-bold text-white transition hover:bg-indigo-600 cursor-pointer"
+            className="w-full rounded-xl bg-indigo-600 hover:bg-indigo-500 py-2.5 text-sm font-bold text-slate-50 transition cursor-pointer"
           >
             Import Mutasi PDF
           </button>
@@ -957,14 +957,14 @@ function CategoryShareChart({
           </div>
           <div className="space-y-2 self-center">
             {data.map((item, index) => (
-              <div key={item.name} className="flex items-center justify-between gap-3 rounded-lg bg-[#0f1117]/70 px-3 py-2">
+              <div key={item.name} className="flex items-center justify-between gap-3 rounded-lg px-3 py-2 finance-category-row">
                 <div className="flex min-w-0 items-center gap-2">
                   <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: CATEGORY_COLORS[index % CATEGORY_COLORS.length] }} />
-                  <span className="truncate text-sm font-medium text-slate-200">{item.name}</span>
+                  <span className="truncate text-sm font-medium finance-category-name">{item.name}</span>
                 </div>
                 <div className="text-right">
-                  <p className={cn("text-sm font-bold", tone === "income" ? "text-emerald-300" : "text-rose-300")}>{item.percentage.toFixed(1)}%</p>
-                  <p className="text-xs text-muted-foreground">{formatCompact(item.amount)}</p>
+                  <p className={cn("text-sm font-bold", tone === "income" ? "finance-category-perc-inc" : "finance-category-perc-exp")}>{item.percentage.toFixed(1)}%</p>
+                  <p className="text-xs finance-category-amount">{formatCompact(item.amount)}</p>
                 </div>
               </div>
             ))}

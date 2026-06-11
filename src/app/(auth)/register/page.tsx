@@ -9,7 +9,7 @@ import { createClient } from "@/lib/supabase/client"
 /* ─────────────────── Inline SVG Illustration ─────────────────── */
 function HeroIllustration() {
   return (
-    <svg viewBox="0 0 480 380" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full max-w-2xl mx-auto drop-shadow-2xl">
+    <svg viewBox="0 0 480 380" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full max-w-[440px] xl:max-w-[480px] h-auto max-h-[250px] xl:max-h-[300px] mx-auto drop-shadow-2xl">
       {/* Central phone/app mockup */}
       <rect x="140" y="30" width="200" height="310" rx="22" fill="#181d30" stroke="#2a3150" strokeWidth="1.5" />
       <rect x="155" y="50" width="170" height="270" rx="10" fill="#10131f" />
@@ -153,7 +153,7 @@ export default function RegisterPage() {
     <div className="min-h-screen flex bg-[#0a0c14]">
 
       {/* ── Left Column: Form ── */}
-      <div className="w-full lg:w-[480px] xl:w-[520px] flex flex-col justify-between px-6 sm:px-10 lg:px-14 py-8 bg-[#0f1117] relative z-10">
+      <div className="w-full lg:w-[480px] xl:w-[520px] flex flex-col justify-between px-6 sm:px-10 lg:px-14 py-5 lg:py-6 bg-[#0f1117] relative z-10 min-h-screen overflow-y-auto">
 
         {/* Logo */}
         <div className="flex items-center gap-3 max-w-sm mx-auto w-full">
@@ -168,13 +168,13 @@ export default function RegisterPage() {
         </div>
 
         {/* Form Section */}
-        <div className="flex-1 flex flex-col justify-center max-w-sm mx-auto w-full">
-          <div className="space-y-1 mb-8">
-            <h1 className="text-2xl font-bold text-white tracking-tight">Buat akun baru</h1>
-            <p className="text-sm text-slate-400">Mulai kelola dan pantau kekayaanmu sekarang.</p>
+        <div className="my-auto py-3 flex flex-col justify-center max-w-sm mx-auto w-full">
+          <div className="space-y-1 mb-4 lg:mb-6">
+            <h1 className="text-xl lg:text-2xl font-bold text-white tracking-tight">Buat akun baru</h1>
+            <p className="text-xs lg:text-sm text-slate-400">Mulai kelola dan pantau kekayaanmu sekarang.</p>
           </div>
 
-          <form onSubmit={handleRegister} className="space-y-5">
+          <form onSubmit={handleRegister} className="space-y-4">
             {/* Email */}
             <div className="space-y-1.5">
               <label htmlFor="register-email" className="text-sm font-medium text-slate-300">Email</label>
@@ -185,7 +185,7 @@ export default function RegisterPage() {
                 onChange={e => setEmail(e.target.value)}
                 placeholder="kamu@email.com"
                 required
-                className="w-full px-4 py-2.5 rounded-xl bg-[#151829] border border-[#1e2440] text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/70 focus:border-transparent transition"
+                className="w-full px-4 py-2 rounded-xl bg-[#151829] border border-[#1e2440] text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/70 focus:border-transparent transition"
               />
             </div>
 
@@ -201,7 +201,7 @@ export default function RegisterPage() {
                   placeholder="Min. 8 karakter"
                   required
                   minLength={8}
-                  className="w-full px-4 py-2.5 pr-11 rounded-xl bg-[#151829] border border-[#1e2440] text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/70 focus:border-transparent transition"
+                  className="w-full px-4 py-2 pr-11 rounded-xl bg-[#151829] border border-[#1e2440] text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/70 focus:border-transparent transition"
                 />
                 <button
                   type="button"
@@ -212,7 +212,7 @@ export default function RegisterPage() {
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
               </div>
-              <p className="text-xs text-slate-500">Minimal 8 karakter, kombinasi huruf besar, kecil, angka & simbol</p>
+              <p className="text-[10px] text-slate-500 leading-tight">Minimal 8 karakter, kombinasi huruf besar, kecil, angka & simbol</p>
             </div>
 
             {/* Error */}
@@ -226,14 +226,14 @@ export default function RegisterPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-2.5 px-4 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold rounded-xl transition-all duration-200 shadow-lg shadow-indigo-500/20 hover:shadow-indigo-500/30"
+              className="w-full py-2 px-4 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold rounded-xl transition-all duration-200 shadow-lg shadow-indigo-500/20 hover:shadow-indigo-500/30"
             >
               {loading ? "Mendaftar..." : "Daftar Sekarang"}
             </button>
           </form>
 
           {/* Divider */}
-          <div className="flex items-center gap-4 my-6">
+          <div className="flex items-center gap-4 my-4 lg:my-5">
             <div className="flex-1 h-px bg-[#1e2440]" />
             <span className="text-xs text-slate-500 uppercase tracking-wider">atau</span>
             <div className="flex-1 h-px bg-[#1e2440]" />
@@ -244,14 +244,14 @@ export default function RegisterPage() {
             type="button"
             onClick={handleGoogleLogin}
             disabled={loading}
-            className="w-full flex items-center justify-center gap-3 py-2.5 px-4 rounded-xl border border-[#1e2440] bg-[#151829] hover:bg-[#1f233a] hover:text-white text-slate-300 font-medium text-sm transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full flex items-center justify-center gap-3 py-2 px-4 rounded-xl border border-[#1e2440] bg-[#151829] hover:bg-[#1f233a] hover:text-white text-slate-300 font-medium text-sm transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <GoogleIcon />
             Daftar dengan Google
           </button>
 
           {/* Login link */}
-          <p className="text-center text-sm text-slate-400 mt-6">
+          <p className="text-center text-sm text-slate-400 mt-4 lg:mt-5">
             Sudah punya akun?{" "}
             <Link href="/login" className="text-indigo-400 hover:text-indigo-300 font-medium transition">Masuk</Link>
           </p>
@@ -264,7 +264,7 @@ export default function RegisterPage() {
       </div>
 
       {/* ── Right Column: Hero / Visual Panel ── */}
-      <div className="hidden lg:flex flex-1 flex-col items-center justify-center relative overflow-hidden bg-[#0a0c14]">
+      <div className="hidden lg:flex flex-1 flex-col items-center justify-center relative overflow-hidden bg-[#0a0c14] min-h-screen">
 
         {/* Background Effects */}
         <div className="absolute inset-0">
@@ -281,16 +281,16 @@ export default function RegisterPage() {
         </div>
 
         {/* Content */}
-        <div className="relative z-10 max-w-xl w-full px-8 space-y-8">
+        <div className="relative z-10 max-w-xl w-full px-8 py-6 space-y-6 lg:space-y-8 flex flex-col justify-center h-full max-h-screen overflow-hidden">
           {/* Headline */}
-          <div className="space-y-4">
-            <h2 className="text-3xl xl:text-4xl font-extrabold text-white leading-tight tracking-tight">
+          <div className="space-y-3">
+            <h2 className="text-2xl xl:text-3xl font-extrabold text-white leading-tight tracking-tight">
               Mulai Sekarang,{" "}
               <span className="bg-gradient-to-r from-violet-400 via-indigo-400 to-blue-400 bg-clip-text text-transparent">
                 Wujudkan Masa Depan Finansialmu.
               </span>
             </h2>
-            <p className="text-base text-slate-400 leading-relaxed">
+            <p className="text-sm xl:text-base text-slate-400 leading-relaxed">
               Gabung dengan kekayaan.id — pantau seluruh aset, atur anggaran harian, dan capai setiap goal finansialmu lebih cepat dari yang kamu bayangkan.
             </p>
           </div>
@@ -299,7 +299,7 @@ export default function RegisterPage() {
           <HeroIllustration />
 
           {/* Feature highlights */}
-          <div className="flex items-center gap-6 pt-2">
+          <div className="flex flex-wrap items-center gap-x-6 gap-y-3 pt-2">
             <div className="flex items-center gap-2">
               <div className="w-8 h-8 rounded-lg bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center">
                 <svg className="w-4 h-4 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
@@ -323,6 +323,14 @@ export default function RegisterPage() {
                 </svg>
               </div>
               <span className="text-xs text-slate-500">Setup 2 Menit</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-center justify-center">
+                <svg className="w-4 h-4 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+              </div>
+              <span className="text-xs text-slate-500">Mutasi Ekstraktor</span>
             </div>
           </div>
         </div>
