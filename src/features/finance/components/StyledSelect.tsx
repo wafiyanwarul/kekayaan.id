@@ -1,14 +1,15 @@
 "use client"
 
+import { useCallback, useEffect, useRef, useState } from "react"
+import { ChevronDown, Check } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { ChevronDown } from "lucide-react"
 
-interface SelectOption {
+export interface SelectOption {
   value: string
   label: string
 }
 
-interface SelectGroup {
+export interface SelectGroup {
   label: string
   options: SelectOption[]
 }
@@ -22,63 +23,155 @@ interface Props {
   className?: string
   id?: string
   required?: boolean
+  /** Max height of the dropdown panel in px. Default 220. */
+  maxHeight?: number
 }
 
 /**
- * Styled select wrapper that renders a native <select> with a custom
- * chevron icon, hover/focus ring, and proper cursor-pointer.
- * Supports flat options or option groups.
+ * Fully custom dropdown — NOT a native <select>.
+ * Gives us 100% control over the dropdown panel size and appearance.
+ * Supports flat option lists or grouped option lists.
  */
 export function StyledSelect({
   value,
   onChange,
   options,
   groups,
-  placeholder,
+  placeholder = "Pilih...",
   className,
   id,
   required,
+  maxHeight = 220,
 }: Props) {
+  const [open, setOpen] = useState(false)
+  const containerRef = useRef<HTMLDivElement>(null)
+
+  // Flatten all options for label lookup
+  const allOptions: SelectOption[] = groups
+    ? groups.flatMap((g) => g.options)
+    : (options ?? [])
+
+  const selectedLabel =
+    allOptions.find((o) => o.value === value)?.label ?? placeholder
+
+  const hasValue = Boolean(value)
+
+  // Close on outside click / Escape
+  const handleOutside = useCallback((e: MouseEvent) => {
+    if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+      setOpen(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (open) document.addEventListener("mousedown", handleOutside)
+    return () => document.removeEventListener("mousedown", handleOutside)
+  }, [open, handleOutside])
+
+  useEffect(() => {
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false)
+    }
+    document.addEventListener("keydown", handleKey)
+    return () => document.removeEventListener("keydown", handleKey)
+  }, [])
+
+  function select(val: string) {
+    onChange(val)
+    setOpen(false)
+  }
+
+  // Hidden input for form required validation
   return (
-    <div className={cn("relative w-full", className)}>
-      <select
-        id={id}
-        value={value}
-        required={required}
-        onChange={(e) => onChange(e.target.value)}
+    <div ref={containerRef} className={cn("relative w-full", className)} id={id}>
+      {/* Hidden real input for form validation */}
+      <input type="hidden" value={value} required={required} />
+
+      {/* Trigger */}
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
         className={cn(
-          "w-full appearance-none rounded-lg border border-[#1e2235] bg-[#0f1117]",
-          "pl-4 pr-10 py-2.5 text-sm text-white",
-          "transition cursor-pointer",
-          "hover:border-indigo-500/60",
-          "focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500",
-          "[&>option]:bg-[#1a1d2e] [&>option]:text-white",
-          "[&>optgroup]:bg-[#1a1d2e] [&>optgroup]:text-slate-400"
+          "group flex w-full items-center justify-between gap-2 rounded-lg border px-3 py-2 text-sm transition cursor-pointer",
+          "focus:outline-none focus:ring-2 focus:ring-indigo-500",
+          open
+            ? "border-indigo-500 bg-[#0f1117] ring-2 ring-indigo-500"
+            : "border-[#1e2235] bg-[#0f1117] hover:border-indigo-500/60"
         )}
       >
-        {placeholder && <option value="">{placeholder}</option>}
+        <span className={cn("truncate", hasValue ? "text-white" : "text-slate-500")}>
+          {selectedLabel}
+        </span>
+        <ChevronDown
+          className={cn(
+            "h-4 w-4 shrink-0 transition-transform",
+            open ? "rotate-180 text-indigo-400" : "text-slate-500 group-hover:text-indigo-400"
+          )}
+        />
+      </button>
 
-        {options?.map((opt) => (
-          <option key={opt.value} value={opt.value}>
-            {opt.label}
-          </option>
-        ))}
+      {/* Dropdown panel */}
+      {open && (
+        <div
+          className="absolute left-0 top-[calc(100%+4px)] z-[70] w-full rounded-xl border border-[#2a2f45] bg-[#12151f] py-1 shadow-2xl shadow-black/60 overflow-y-auto"
+          style={{ maxHeight }}
+        >
+          {/* Flat options */}
+          {options?.map((opt) => (
+            <OptionItem
+              key={opt.value}
+              option={opt}
+              isSelected={opt.value === value}
+              onSelect={select}
+            />
+          ))}
 
-        {groups?.map((group) => (
-          <optgroup key={group.label} label={group.label}>
-            {group.options.map((opt) => (
-              <option key={opt.value} value={opt.value}>
-                {opt.label}
-              </option>
-            ))}
-          </optgroup>
-        ))}
-      </select>
-
-      {/* Custom arrow icon — positioned to not overlap content */}
-      <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400">
-        <ChevronDown className="h-4 w-4" />
-      </div>
+          {/* Grouped options */}
+          {groups?.map((group, gi) => (
+            <div key={gi}>
+              <div className="px-3 pt-2 pb-1">
+                <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">
+                  {group.label}
+                </span>
+              </div>
+              {group.options.map((opt) => (
+                <OptionItem
+                  key={opt.value}
+                  option={opt}
+                  isSelected={opt.value === value}
+                  onSelect={select}
+                />
+              ))}
+            </div>
+          ))}
+        </div>
+      )}
     </div>
+  )
+}
+
+function OptionItem({
+  option,
+  isSelected,
+  onSelect,
+}: {
+  option: SelectOption
+  isSelected: boolean
+  onSelect: (value: string) => void
+}) {
+  return (
+    <button
+      type="button"
+      onClick={() => onSelect(option.value)}
+      className={cn(
+        "flex w-full items-center justify-between gap-2 px-3 py-2 text-sm transition cursor-pointer",
+        isSelected
+          ? "bg-indigo-500/15 text-indigo-300"
+          : "text-slate-300 hover:bg-white/[0.06] hover:text-white"
+      )}
+    >
+      <span className="truncate">{option.label}</span>
+      {isSelected && <Check className="h-3.5 w-3.5 shrink-0 text-indigo-400" />}
+    </button>
   )
 }

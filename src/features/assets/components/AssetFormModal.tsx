@@ -82,6 +82,7 @@ export function AssetFormModal({ userId, asset, onClose, onSaved }: Props) {
             <StyledSelect
               value={category}
               onChange={handleCategoryChange}
+              maxHeight={180}
               groups={[
                 {
                   label: "💧 Likuid",
