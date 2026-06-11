@@ -122,6 +122,13 @@ html[data-theme="light"] {
   .bg-\[\#131520\],
   .bg-\[\#131622\]\/40,
   .bg-\[\#181d30\]\/40,
+  .bg-\[\#0e1713\],
+  .bg-\[\#170e0e\],
+  .bg-\[\#16131c\],
+  .bg-\[\#17140f\],
+  .bg-\[\#0f1712\],
+  .bg-\[\#121420\],
+  .bg-\[\#201212\],
   .bg-card {
     background-color: var(--color-card) !important;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05), 0 4px 12px rgba(0, 0, 0, 0.03) !important;
@@ -307,4 +314,225 @@ html[data-theme="light"] {
   ::-webkit-scrollbar-thumb:hover {
     background: #94a3b8 !important; /* slate-400 */
   }
+}
+
+/* ==========================================================================
+   SEMANTIC THEME-AWARE COMPONENTS (Restoring default dark mode, overriding in light)
+   ========================================================================== */
+
+/* Goals Countdown Badge */
+.goals-countdown-badge {
+  background-color: #1e293b; /* bg-slate-800 */
+  color: #cbd5e1; /* text-slate-300 */
+}
+html[data-theme="light"] .goals-countdown-badge {
+  background-color: #f1f5f9 !important;
+  color: #475569 !important;
+}
+
+/* Goals Page Surplus Cashflow Banner */
+.goals-surplus-banner {
+  background-color: rgba(24, 29, 48, 0.2);
+  border: 1px solid rgba(46, 54, 96, 0.4);
+  color: #cbd5e1; /* text-slate-300 */
+}
+.goals-surplus-sparkles {
+  color: #818cf8; /* text-indigo-400 */
+}
+.goals-surplus-amount {
+  color: #34d399; /* text-emerald-400 */
+}
+.goals-surplus-link {
+  color: #a5b4fc; /* text-indigo-300 */
+}
+.goals-surplus-link:hover {
+  color: #c7d2fe; /* text-indigo-200 */
+}
+
+html[data-theme="light"] .goals-surplus-banner {
+  background-color: rgba(99, 102, 241, 0.08) !important;
+  border: 1px solid rgba(99, 102, 241, 0.15) !important;
+  color: #312e81 !important; /* indigo-900 */
+}
+html[data-theme="light"] .goals-surplus-sparkles {
+  color: #4f46e5 !important;
+}
+html[data-theme="light"] .goals-surplus-amount {
+  color: #059669 !important;
+}
+html[data-theme="light"] .goals-surplus-link {
+  color: #4f46e5 !important;
+}
+html[data-theme="light"] .goals-surplus-link:hover {
+  color: #4338ca !important;
+}
+
+/* Goals Formula Details Container */
+.goals-formula-container {
+  background-color: rgba(20, 22, 36, 0.65);
+  border: 1px solid #1e2235;
+  color: #cbd5e1; /* text-slate-300 */
+}
+.goals-formula-title {
+  color: #ffffff;
+}
+.goals-formula-highlight {
+  color: #ffffff;
+}
+.goals-formula-bullets {
+  color: #94a3b8; /* text-slate-400 */
+}
+.goals-formula-divider {
+  border-color: #1e2235;
+}
+
+html[data-theme="light"] .goals-formula-container {
+  background-color: #f8fafc !important;
+  border: 1px solid #e2e8f0 !important;
+  color: #475569 !important;
+}
+html[data-theme="light"] .goals-formula-title {
+  color: #0f172a !important;
+}
+html[data-theme="light"] .goals-formula-highlight {
+  color: #0f172a !important;
+}
+html[data-theme="light"] .goals-formula-bullets {
+  color: #475569 !important;
+}
+html[data-theme="light"] .goals-formula-divider {
+  border-color: #e2e8f0 !important;
+}
+
+/* Finance Page Bank Mutasi Card */
+.finance-mutasi-card {
+  background-image: linear-gradient(to bottom right, #0f1117, rgba(30, 27, 75, 0.2));
+  border-color: rgba(99, 102, 241, 0.2);
+}
+.finance-mutasi-icon {
+  color: #818cf8; /* text-indigo-400 */
+}
+.finance-mutasi-title {
+  color: #ffffff;
+}
+.finance-mutasi-badge {
+  background-color: rgba(16, 185, 129, 0.15);
+  color: #34d399;
+}
+.finance-mutasi-subtitle {
+  color: #94a3b8; /* text-slate-400 */
+}
+.finance-mutasi-security {
+  background-color: rgba(16, 185, 129, 0.05);
+  border-color: rgba(16, 185, 129, 0.2);
+}
+.finance-mutasi-security-text {
+  color: #34d399;
+}
+
+html[data-theme="light"] .finance-mutasi-card {
+  background-image: none !important;
+  background-color: rgba(99, 102, 241, 0.04) !important;
+  border-color: rgba(99, 102, 241, 0.15) !important;
+}
+html[data-theme="light"] .finance-mutasi-icon {
+  color: #4f46e5 !important;
+}
+html[data-theme="light"] .finance-mutasi-title {
+  color: #1e293b !important;
+}
+html[data-theme="light"] .finance-mutasi-badge {
+  background-color: rgba(5, 150, 105, 0.1) !important;
+  color: #059669 !important;
+}
+html[data-theme="light"] .finance-mutasi-subtitle {
+  color: #475569 !important;
+}
+html[data-theme="light"] .finance-mutasi-security {
+  background-color: rgba(5, 150, 105, 0.06) !important;
+  border-color: rgba(5, 150, 105, 0.15) !important;
+}
+html[data-theme="light"] .finance-mutasi-security-text {
+  color: #059669 !important;
+}
+
+/* Category Share Chart Legend List Rows */
+.finance-category-row {
+  background-color: rgba(15, 17, 23, 0.7);
+}
+.finance-category-name {
+  color: #e2e8f0; /* slate-200 */
+}
+.finance-category-perc-inc {
+  color: #6ee7b7; /* emerald-300 */
+}
+.finance-category-perc-exp {
+  color: #fca5a5; /* rose-300 */
+}
+.finance-category-amount {
+  color: #94a3b8; /* text-slate-400 */
+}
+
+html[data-theme="light"] .finance-category-row {
+  background-color: #f8fafc !important;
+  border: 1px solid #f1f5f9 !important;
+}
+html[data-theme="light"] .finance-category-name {
+  color: #1e293b !important;
+}
+html[data-theme="light"] .finance-category-perc-inc {
+  color: #059669 !important; /* emerald-600 */
+}
+html[data-theme="light"] .finance-category-perc-exp {
+  color: #e11d48 !important; /* rose-600 */
+}
+html[data-theme="light"] .finance-category-amount {
+  color: #64748b !important;
+}
+
+/* Settings Tables styling */
+.settings-table-container {
+  background-color: #0b0c10;
+  border-color: #1e2235;
+}
+.settings-table-header {
+  background-color: #0f1117;
+  border-color: #1e2235;
+}
+.settings-table-th {
+  background-color: rgba(15, 17, 23, 0.5);
+  color: #94a3b8; /* slate-400 */
+  border-color: #1e2235;
+}
+.settings-table-body {
+  background-color: #0b0c10;
+}
+.settings-table-row {
+  border-color: #1e2235;
+}
+.settings-table-row:hover {
+  background-color: #131622;
+}
+
+html[data-theme="light"] .settings-table-container {
+  background-color: #f8fafc !important;
+  border-color: #e2e8f0 !important;
+}
+html[data-theme="light"] .settings-table-header {
+  background-color: #f1f5f9 !important;
+  border-color: #e2e8f0 !important;
+}
+html[data-theme="light"] .settings-table-th {
+  background-color: #f1f5f9 !important;
+  color: #475569 !important;
+  border-color: #e2e8f0 !important;
+}
+html[data-theme="light"] .settings-table-body {
+  background-color: #ffffff !important;
+}
+html[data-theme="light"] .settings-table-row {
+  border-color: #e2e8f0 !important;
+}
+html[data-theme="light"] .settings-table-row:hover {
+  background-color: #f1f5f9 !important;
 }

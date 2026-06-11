@@ -713,28 +713,28 @@ export function SettingsPanel() {
             ) : (
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Left Table: Income Categories */}
-                <div className="rounded-lg border border-slate-200 dark:border-[#1e2235] bg-slate-50 dark:bg-[#0b0c10] overflow-hidden">
-                  <div className="bg-slate-100 dark:bg-[#0f1117] px-4 py-3 border-b border-slate-200 dark:border-[#1e2235]">
-                    <h4 className="font-bold text-slate-900 dark:text-white text-sm">Kategori Pemasukan (Income)</h4>
+                <div className="rounded-lg border settings-table-container overflow-hidden">
+                  <div className="px-4 py-3 border-b settings-table-header">
+                    <h4 className="font-bold text-white text-sm">Kategori Pemasukan (Income)</h4>
                   </div>
                   <div className="overflow-x-auto">
-                    <table className="w-full border-collapse text-left text-sm text-slate-600 dark:text-slate-300">
-                      <thead className="bg-slate-100/80 dark:bg-[#0f1117]/50 text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-[#1e2235]">
+                    <table className="w-full border-collapse text-left text-sm text-slate-300">
+                      <thead className="text-xs font-semibold uppercase tracking-wider text-slate-400 border-b settings-table-header">
                         <tr>
-                          <th className="px-4 py-2 w-12 text-center">No</th>
-                          <th className="px-4 py-2">Nama</th>
-                          <th className="px-4 py-2">Tipe</th>
-                          <th className="px-4 py-2 text-right">Aksi</th>
+                          <th className="px-4 py-2 w-12 text-center settings-table-th">No</th>
+                          <th className="px-4 py-2 settings-table-th">Nama</th>
+                          <th className="px-4 py-2 settings-table-th">Tipe</th>
+                          <th className="px-4 py-2 text-right settings-table-th">Aksi</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-slate-200 dark:divide-[#1e2235] bg-white dark:bg-[#0b0c10]">
+                      <tbody className="divide-y settings-table-body">
                         {incomeCategories.length === 0 ? (
                           <tr>
                             <td colSpan={4} className="px-4 py-3 text-center text-slate-500 text-xs">Tidak ada kategori.</td>
                           </tr>
                         ) : (
                           incomeCategories.map((cat, idx) => (
-                            <tr key={cat.id} className="hover:bg-slate-50 dark:hover:bg-[#131622] transition-colors">
+                            <tr key={cat.id} className="settings-table-row transition-colors">
                               <td className="px-4 py-2 text-center text-slate-500 text-xs">{idx + 1}</td>
                               <td className="px-4 py-2 font-semibold text-white">{cat.name}</td>
                               <td className="px-4 py-2">
@@ -767,28 +767,28 @@ export function SettingsPanel() {
                 </div>
 
                 {/* Right Table: Expense Categories */}
-                <div className="rounded-lg border border-slate-200 dark:border-[#1e2235] bg-slate-50 dark:bg-[#0b0c10] overflow-hidden">
-                  <div className="bg-slate-100 dark:bg-[#0f1117] px-4 py-3 border-b border-slate-200 dark:border-[#1e2235]">
-                    <h4 className="font-bold text-slate-900 dark:text-white text-sm">Kategori Pengeluaran (Expense)</h4>
+                <div className="rounded-lg border settings-table-container overflow-hidden">
+                  <div className="px-4 py-3 border-b settings-table-header">
+                    <h4 className="font-bold text-white text-sm">Kategori Pengeluaran (Expense)</h4>
                   </div>
                   <div className="overflow-x-auto">
-                    <table className="w-full border-collapse text-left text-sm text-slate-600 dark:text-slate-300">
-                      <thead className="bg-slate-100/80 dark:bg-[#0f1117]/50 text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-[#1e2235]">
+                    <table className="w-full border-collapse text-left text-sm text-slate-300">
+                      <thead className="text-xs font-semibold uppercase tracking-wider text-slate-400 border-b settings-table-header">
                         <tr>
-                          <th className="px-4 py-2 w-12 text-center">No</th>
-                          <th className="px-4 py-2">Nama</th>
-                          <th className="px-4 py-2">Tipe</th>
-                          <th className="px-4 py-2 text-right">Aksi</th>
+                          <th className="px-4 py-2 w-12 text-center settings-table-th">No</th>
+                          <th className="px-4 py-2 settings-table-th">Nama</th>
+                          <th className="px-4 py-2 settings-table-th">Tipe</th>
+                          <th className="px-4 py-2 text-right settings-table-th">Aksi</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-slate-200 dark:divide-[#1e2235] bg-white dark:bg-[#0b0c10]">
+                      <tbody className="divide-y settings-table-body">
                         {expenseCategories.length === 0 ? (
                           <tr>
                             <td colSpan={4} className="px-4 py-3 text-center text-slate-500 text-xs">Tidak ada kategori.</td>
                           </tr>
                         ) : (
                           expenseCategories.map((cat, idx) => (
-                            <tr key={cat.id} className="hover:bg-slate-50 dark:hover:bg-[#131622] transition-colors">
+                            <tr key={cat.id} className="settings-table-row transition-colors">
                               <td className="px-4 py-2 text-center text-slate-500 text-xs">{idx + 1}</td>
                               <td className="px-4 py-2 font-semibold text-white">{cat.name}</td>
                               <td className="px-4 py-2">
@@ -855,18 +855,18 @@ export function SettingsPanel() {
               </div>
             ) : (
               <div className="space-y-4">
-                <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-[#1e2235]">
-                  <table className="w-full border-collapse text-left text-sm text-slate-600 dark:text-slate-300">
-                    <thead className="bg-slate-100 dark:bg-[#0f1117] text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-[#1e2235]">
+                <div className="overflow-x-auto rounded-lg border settings-table-container">
+                  <table className="w-full border-collapse text-left text-sm text-slate-300">
+                    <thead className="text-xs font-semibold uppercase tracking-wider text-slate-400 border-b settings-table-header">
                       <tr>
-                        <th className="px-4 py-3 w-12 text-center">No</th>
-                        <th className="px-4 py-3">Email</th>
-                        <th className="px-4 py-3">Role</th>
-                        <th className="px-4 py-3">Terdaftar Sejak</th>
-                        <th className="px-4 py-3 text-right">Aksi</th>
+                        <th className="px-4 py-3 w-12 text-center settings-table-th">No</th>
+                        <th className="px-4 py-3 settings-table-th">Email</th>
+                        <th className="px-4 py-3 settings-table-th">Role</th>
+                        <th className="px-4 py-3 settings-table-th">Terdaftar Sejak</th>
+                        <th className="px-4 py-3 text-right settings-table-th">Aksi</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-200 dark:divide-[#1e2235] bg-white dark:bg-[#0b0c10]">
+                    <tbody className="divide-y settings-table-body">
                       {paginatedUsers.length === 0 ? (
                         <tr>
                           <td colSpan={5} className="px-4 py-6 text-center text-slate-500">Tidak ada user ditemukan.</td>
@@ -876,7 +876,7 @@ export function SettingsPanel() {
                           const number = (currentPage - 1) * itemsPerPage + idx + 1
                           const request = roleRequests.find(r => r.user_id === user.user_id && r.status === "pending")
                           return (
-                            <tr key={user.user_id} className="hover:bg-slate-50 dark:hover:bg-[#131622] transition-colors">
+                            <tr key={user.user_id} className="settings-table-row transition-colors">
                               <td className="px-4 py-3 text-center text-slate-500 text-xs">{number}</td>
                               <td className="px-4 py-3 font-medium text-white">{user.email}</td>
                               <td className="px-4 py-3">

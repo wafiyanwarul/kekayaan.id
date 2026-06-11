@@ -55,8 +55,8 @@ export async function proxy(request: NextRequest) {
   const publicRoutes = ["/login", "/register", "/forgot-password", "/reset-password", "/auth", "/verify-otp", "/maintenance", "/api/auth"]
   const isPublicRoute = publicRoutes.some((route) => pathname.startsWith(route))
 
-  // If maintenance is active, restrict access for non-admin users
-  if (isMaintenanceActive && pathname !== "/maintenance") {
+  // If maintenance is active, restrict access for non-admin users (exempting login and auth callback routes so admins can authenticate)
+  if (isMaintenanceActive && pathname !== "/maintenance" && pathname !== "/login" && !pathname.startsWith("/auth") && !pathname.startsWith("/api/auth")) {
     let isAdmin = false
     if (user) {
       const { data: roleData } = await supabase
