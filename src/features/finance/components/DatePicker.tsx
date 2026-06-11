@@ -149,7 +149,7 @@ export function DatePicker({ value, onChange, required, id }: Props) {
 
       {/* Calendar dropdown */}
       {open && (
-        <div className="absolute left-0 top-[calc(100%+6px)] z-[60] w-72 rounded-xl border border-[#2a2f45] bg-[#12151f] p-3 shadow-2xl shadow-black/60">
+        <div className="absolute right-0 top-[calc(100%+6px)] z-[60] w-64 rounded-xl border border-[#2a2f45] bg-[#12151f] p-3 shadow-2xl shadow-black/60">
           {/* Month / year nav */}
           <div className="mb-3 flex items-center justify-between">
             <button
@@ -183,7 +183,7 @@ export function DatePicker({ value, onChange, required, id }: Props) {
           </div>
 
           {/* Calendar grid */}
-          <div className="grid grid-cols-7 gap-0.5">
+          <div className="grid grid-cols-7 gap-px">
             {cells.map((day, idx) => {
               if (!day) return <div key={`empty-${idx}`} />
               const selected = isSelected(day)
@@ -194,7 +194,7 @@ export function DatePicker({ value, onChange, required, id }: Props) {
                   type="button"
                   onClick={() => selectDay(day)}
                   className={cn(
-                    "flex h-8 w-full items-center justify-center rounded-lg text-sm font-medium transition cursor-pointer",
+                    "flex h-7 w-full items-center justify-center rounded-md text-xs font-medium transition cursor-pointer",
                     selected
                       ? "bg-indigo-600 text-white"
                       : todayMark

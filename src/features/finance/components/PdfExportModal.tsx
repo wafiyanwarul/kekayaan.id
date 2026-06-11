@@ -67,7 +67,7 @@ export function PdfExportModal({ transactions, cycle, defaultCycleIndex = 0 }: P
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
           onClick={(e) => e.target === e.currentTarget && setOpen(false)}
         >
-          <div className="w-full max-w-md rounded-2xl border border-[#1e2235] bg-[#1a1d2e] shadow-2xl">
+          <div className="w-full max-w-[420px] rounded-2xl border border-[#1e2235] bg-[#1a1d2e] shadow-2xl max-h-[92vh] overflow-y-auto">
             {/* Modal header */}
             <div className="flex items-center justify-between border-b border-[#1e2235] px-6 py-4">
               <div className="flex items-center gap-2.5">
