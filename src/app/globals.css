@@ -45,6 +45,9 @@ body {
   color: var(--color-foreground);
   font-family: system-ui, -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+  overscroll-behavior-y: contain; /* Prevent browser bounce */
 }
 
 /* Scrollbar Dark Mode */

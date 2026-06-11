@@ -1,10 +1,11 @@
 "use client"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import Image from "next/image"
-import { Eye, EyeOff } from "lucide-react"
+import { Eye, EyeOff, Loader2 } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
+import { OnboardingSlides } from "@/components/auth/OnboardingSlides"
 
 /* ─────────────────── Inline SVG Illustration ─────────────────── */
 function HeroIllustration() {
@@ -94,6 +95,24 @@ export default function LoginPage() {
   const [rememberMe, setRememberMe] = useState(false)
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
+  const [showOnboarding, setShowOnboarding] = useState<boolean | null>(null)
+
+  useEffect(() => {
+    const completed = localStorage.getItem("kekayaan-id-onboarding-completed")
+    setShowOnboarding(completed !== "true")
+  }, [])
+
+  if (showOnboarding === null) {
+    return (
+      <div className="min-h-screen bg-[#0f1117] flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-indigo-500" />
+      </div>
+    )
+  }
+
+  if (showOnboarding) {
+    return <OnboardingSlides onComplete={() => setShowOnboarding(false)} />
+  }
 
   function getLoginErrorMessage(errorMsg: string): string {
     const msg = errorMsg.toLowerCase()

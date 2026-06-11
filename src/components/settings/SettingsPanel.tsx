@@ -589,6 +589,9 @@ export function SettingsPanel() {
       {/* ── Change Password (Everyone) ────────────────────────────────────── */}
       <ChangePasswordCard />
 
+      {/* ── Privacy Policy (Everyone) ─────────────────────────────────────── */}
+      <PrivacyPolicyCard />
+
       {/* ── Admin & Super Admin Sections ──────────────────────────────────── */}
       {isAdminOrSuper && (
         <>
@@ -1405,6 +1408,112 @@ export function SettingsPanel() {
         </div>
       )}
     </div>
+  )
+}
+
+// ── Privacy Policy Card ──────────────────────────────────────────────────────
+function PrivacyPolicyCard() {
+  const [showModal, setShowModal] = useState(false)
+
+  return (
+    <section className="rounded-xl border bg-card p-6">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-start gap-3">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-indigo-500/15 text-indigo-400">
+            <ShieldCheck className="h-5 w-5" />
+          </div>
+          <div>
+            <h3 className="text-base font-bold text-white">Kebijakan Privasi & Keamanan Data</h3>
+            <p className="text-sm text-muted-foreground">
+              Pelajari bagaimana data Anda dilindungi secara privat, komitmen keamanan, serta kepatuhan larangan penggunaan ilegal.
+            </p>
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={() => setShowModal(true)}
+          className="w-full sm:w-auto shrink-0 inline-flex items-center justify-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-500 transition cursor-pointer"
+        >
+          Lihat Kebijakan
+        </button>
+      </div>
+
+      {showModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-md">
+          <div className="w-full max-w-2xl rounded-2xl border border-indigo-500/20 bg-card p-6 shadow-2xl animate-scale-in max-h-[85vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b pb-4 mb-4">
+              <div className="flex items-center gap-2">
+                <ShieldCheck className="h-6 w-6 text-indigo-400" />
+                <h3 className="text-lg font-bold text-white">Kebijakan Privasi & Manajemen Data</h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowModal(false)}
+                className="text-muted-foreground hover:text-white transition cursor-pointer"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="space-y-5 text-sm text-slate-300 leading-relaxed pr-2">
+              <section>
+                <h4 className="font-bold text-white text-base mb-1">1. Manajemen & Penggunaan Data</h4>
+                <p>
+                  Seluruh data keuangan, transaksi, aset, dan sasaran (goals) yang Anda masukkan disimpan secara aman menggunakan database PostgreSQL pihak ketiga yang dihosting di <strong>Supabase</strong>.
+                </p>
+                <p className="mt-1">
+                  Kami menerapkan kebijakan <strong>Row Level Security (RLS)</strong> yang ketat pada database, memastikan bahwa setiap data hanya dapat dibaca, ditambah, diubah, atau dihapus oleh pengguna pemilik sah data tersebut (yang diautentikasi lewat token JWT dinamis).
+                </p>
+              </section>
+
+              <section>
+                <h4 className="font-bold text-white text-base mb-1">2. Protokol Keamanan & Privasi</h4>
+                <p>
+                  Aplikasi kekayaan.id menggunakan enkripsi SSL/TLS tingkat tinggi untuk seluruh lalu lintas data antara perangkat Anda dan server. Data sensitif seperti kata sandi dienkripsi menggunakan hashing kriptografi satu arah yang kuat.
+                </p>
+                <p className="mt-1">
+                  Kami <strong>tidak pernah menjual, membagikan, atau menyalahgunakan</strong> informasi finansial Anda kepada pihak ketiga manapun untuk kebutuhan pemasaran, iklan, atau pelacakan profil komersial lainnya.
+                </p>
+              </section>
+
+              <section className="p-4 rounded-xl bg-red-500/5 border border-red-500/10">
+                <div className="flex items-start gap-2.5">
+                  <AlertTriangle className="h-5 w-5 text-red-400 shrink-0 mt-0.5" />
+                  <div>
+                    <h4 className="font-bold text-red-200 text-sm mb-1">3. Larangan Penyalahgunaan & Kepatuhan Hukum</h4>
+                    <p className="text-xs text-red-300/90">
+                      Penggunaan aplikasi kekayaan.id beserta seluruh fiturnya (seperti impor berkas mutasi bank, kalkulator aset, pelacak finansial, dan simulasi portofolio) <strong>hanya ditujukan untuk pencatatan dan pengelolaan keuangan pribadi secara legal</strong>.
+                    </p>
+                    <ul className="mt-2 space-y-1 list-disc list-inside text-xs text-red-300/80">
+                      <li>Dilarang keras memanipulasi berkas mutasi bank atau dokumen eksternal untuk tujuan pemalsuan, penipuan, atau pencucian uang (money laundering).</li>
+                      <li>Dilarang menggunakan aplikasi untuk aktivitas yang mendukung tindakan kriminal, pendanaan terorisme, penghindaran pajak ilegal, atau kejahatan siber.</li>
+                      <li>Platform berhak menonaktifkan akun secara permanen jika ditemukan indikasi kuat pelanggaran hukum atau penyalahgunaan fitur sistem.</li>
+                    </ul>
+                  </div>
+                </div>
+              </section>
+
+              <section>
+                <h4 className="font-bold text-white text-base mb-1">4. Keamanan Integrasi AI (Ekstraktor PDF)</h4>
+                <p>
+                  Saat mengunggah berkas mutasi rekening bank untuk diekstrak, dokumen diproses secara langsung melalui REST API yang aman. Kami tidak menyimpan salinan berkas mutasi bank fisik Anda di penyimpanan cloud permanen setelah ekstraksi selesai dilakukan. Data mutasi diekstrak menjadi daftar transaksi numerik biasa dan dikategorikan secara cerdas demi privasi penuh Anda.
+                </p>
+              </section>
+            </div>
+
+            <div className="mt-6 pt-4 border-t flex justify-end">
+              <button
+                type="button"
+                onClick={() => setShowModal(false)}
+                className="rounded-lg bg-indigo-600 hover:bg-indigo-500 transition px-5 py-2 text-sm font-semibold text-white cursor-pointer"
+              >
+                Saya Mengerti
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </section>
   )
 }
 
