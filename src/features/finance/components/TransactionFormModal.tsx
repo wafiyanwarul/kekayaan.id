@@ -4,6 +4,7 @@ import { useMemo, useState } from "react"
 import { X } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 import { toDateInputValue } from "../utils"
+import { DatePicker } from "./DatePicker"
 import type { FinanceCategory, FinanceTransaction, TransactionType } from "../types"
 
 interface Props {
@@ -80,7 +81,7 @@ export function TransactionFormModal({ categories, transaction, userId, onClose,
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
-      <div className="w-full max-w-lg rounded-2xl border border-[#1e2235] bg-[#1a1d2e] p-6">
+      <div className="w-full max-w-md rounded-2xl border border-[#1e2235] bg-[#1a1d2e] p-5 shadow-2xl max-h-[90vh] overflow-y-auto">
         <div className="mb-5 flex items-center justify-between">
           <h2 className="text-lg font-bold text-white">{isEdit ? "Edit Transaksi" : "Tambah Transaksi"}</h2>
           <button
@@ -140,12 +141,10 @@ export function TransactionFormModal({ categories, transaction, userId, onClose,
 
             <div className="space-y-1.5">
               <label className="text-sm font-medium text-slate-300">Tanggal</label>
-              <input
-                type="date"
+              <DatePicker
                 value={transactionDate}
-                onChange={(event) => setTransactionDate(event.target.value)}
+                onChange={setTransactionDate}
                 required
-                className="w-full rounded-lg border border-[#1e2235] bg-[#0f1117] px-4 py-2.5 text-white transition focus:outline-none focus:ring-2 focus:ring-indigo-500"
               />
             </div>
 

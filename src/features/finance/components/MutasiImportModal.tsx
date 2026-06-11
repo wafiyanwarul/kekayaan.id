@@ -14,6 +14,7 @@ import {
 } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 import { cn, formatRupiah } from "@/lib/utils"
+import { DatePicker } from "./DatePicker"
 import type { FinanceCategory, FinanceTransaction, ParsedTransaction } from "../types"
 
 interface Props {
@@ -455,14 +456,16 @@ export function MutasiImportModal({ categories, userId, onClose, onImported }: P
                           {/* Date */}
                           <td className="px-3 py-2.5">
                             {editingCell?.id === row.id && editingCell?.field === "date" ? (
-                              <input
-                                type="date"
-                                value={row.date}
-                                autoFocus
-                                onChange={(e) => updateRow(row.id, "date", e.target.value)}
-                                onBlur={() => setEditingCell(null)}
-                                className="w-32 rounded bg-[#1a1d2e] px-2 py-1 text-xs text-white focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                              />
+                              <div className="w-40">
+                                <DatePicker
+                                  value={row.date}
+                                  onChange={(val) => {
+                                    updateRow(row.id, "date", val)
+                                    setEditingCell(null)
+                                  }}
+                                  required
+                                />
+                              </div>
                             ) : (
                               <button
                                 type="button"
