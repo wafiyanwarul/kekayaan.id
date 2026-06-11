@@ -47,33 +47,7 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-html[data-theme="light"] {
-  --color-background: #eef2f8;
-  --color-foreground: #172033;
-
-  --color-card: #f8fafc;
-  --color-card-foreground: #172033;
-
-  --color-popover: #f8fafc;
-  --color-popover-foreground: #172033;
-
-  --color-secondary: #e2e8f0;
-  --color-secondary-foreground: #475569;
-
-  --color-muted: #dbe3ee;
-  --color-muted-foreground: #64748b;
-
-  --color-border: #d8e0ec;
-  --color-input: #d8e0ec;
-}
-
-html[data-theme="light"] body {
-  background:
-    radial-gradient(circle at top left, rgba(99, 102, 241, 0.10), transparent 32rem),
-    var(--color-background);
-}
-
-/* Scrollbar */
+/* Scrollbar Dark Mode */
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
@@ -86,4 +60,251 @@ html[data-theme="light"] body {
 .card-hover:hover {
   border-color: #6366f1;
   box-shadow: 0 0 0 1px #6366f133, 0 4px 24px #6366f122;
+}
+
+/* ==========================================================================
+   LIGHT MODE DESIGN SYSTEM & CLASS OVERRIDES (Dash UI Style)
+   ========================================================================== */
+html[data-theme="light"] {
+  --color-background: #f4f6f9;      /* Dash UI premium light-blue/gray background */
+  --color-foreground: #1e293b;      /* Deep slate-800 text */
+
+  --color-card: #ffffff;            /* Pure white cards */
+  --color-card-foreground: #1e293b;
+
+  --color-popover: #ffffff;
+  --color-popover-foreground: #1e293b;
+
+  --color-secondary: #f1f5f9;       /* Slate-100 */
+  --color-secondary-foreground: #475569; /* Slate-600 */
+
+  --color-muted: #f8fafc;           /* Slate-50 */
+  --color-muted-foreground: #64748b; /* Slate-500 */
+
+  --color-border: #e2e8f0;          /* Clean slate-200 border */
+  --color-input: #ffffff;
+}
+
+html[data-theme="light"] body {
+  background:
+    radial-gradient(circle at top left, rgba(99, 102, 241, 0.05), transparent 40rem),
+    var(--color-background);
+  color: var(--color-foreground);
+}
+
+/* Light Theme overrides for hardcoded dark classes */
+html[data-theme="light"] {
+  /* 1. Background Overrides */
+  /* Main page background overrides */
+  .bg-\[\#0a0c14\],
+  .bg-\[\#0f1117\],
+  .bg-\[\#07090e\],
+  .bg-\[\#0f111a\]\/85,
+  .bg-\#0a0c14,
+  .bg-\#0f1117 {
+    background-color: var(--color-background) !important;
+  }
+
+  /* Card components -> White cards with soft shadows */
+  .bg-\[\#1a1d2e\],
+  .bg-\[\#131622\],
+  .bg-\[\#12151f\],
+  .bg-\[\#151829\],
+  .bg-\[\#1a1c2a\],
+  .bg-\[\#16192b\],
+  .bg-\[\#181b2a\],
+  .bg-\[\#181d30\],
+  .bg-\[\#1d2138\],
+  .bg-\[\#10131f\],
+  .bg-\[\#11131f\],
+  .bg-\[\#08090d\],
+  .bg-\[\#161824\],
+  .bg-\[\#131520\],
+  .bg-\[\#131622\]\/40,
+  .bg-\[\#181d30\]\/40,
+  .bg-card {
+    background-color: var(--color-card) !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05), 0 4px 12px rgba(0, 0, 0, 0.03) !important;
+  }
+
+  /* Modal Backdrop Overlay */
+  .bg-black\/60 {
+    background-color: rgba(15, 23, 42, 0.45) !important; /* Soft slate-900 overlay */
+  }
+
+  /* Subtle background components (e.g. lists, table headers, sidebar) */
+  .bg-\[\#0f1117\]:not(body):not(html),
+  .bg-\[\#0f1117\]\/50,
+  .bg-\[\#1e2235\],
+  .bg-\[\#1e2440\],
+  .bg-slate-900 {
+    background-color: #f1f5f9 !important;
+  }
+
+  /* 2. Border Overrides */
+  .border-\[\#1e2235\],
+  .border-\[\#1e2440\],
+  .border-\[\#2a2f45\],
+  .border-\[\#232840\],
+  .border-\[\#2e3660\],
+  .border-\[\#2e3660\]\/60,
+  .border-\[\#1e2235\]\/60,
+  .border-\[\#1e2235\]\/40,
+  .border-border,
+  .border-t,
+  .border-b,
+  .border-r,
+  .border-l,
+  .border,
+  hr {
+    border-color: var(--color-border) !important;
+  }
+
+  /* 3. Text Color Overrides */
+  /* Primary dark slate text */
+  .text-white,
+  .text-slate-100,
+  .text-slate-200,
+  .text-slate-300,
+  .text-foreground {
+    color: var(--color-foreground) !important;
+  }
+
+  /* Secondary/Muted text */
+  .text-slate-400,
+  .text-slate-500,
+  .text-muted-foreground {
+    color: var(--color-secondary-foreground) !important;
+  }
+
+  /* Brand and Link Text color adjustments */
+  .text-\[\#a5b4fc\],
+  .text-indigo-400,
+  .text-indigo-300 {
+    color: #4f46e5 !important;
+  }
+  .hover\:text-indigo-300:hover,
+  .hover\:text-indigo-400:hover {
+    color: #4338ca !important;
+  }
+
+  /* High contrast transaction texts for clean readability */
+  .text-emerald-400 {
+    color: #059669 !important; /* emerald-600 */
+  }
+  .text-rose-400 {
+    color: #e11d48 !important; /* rose-600 */
+  }
+  .text-emerald-300 {
+    color: #047857 !important; /* emerald-700 */
+  }
+  .text-rose-300 {
+    color: #be123c !important; /* rose-700 */
+  }
+
+  /* 4. Form Fields Overrides (Clean white inputs) */
+  input, select, textarea {
+    background-color: #ffffff !important;
+    color: var(--color-foreground) !important;
+    border-color: var(--color-border) !important;
+  }
+  input::placeholder, textarea::placeholder {
+    color: #94a3b8 !important;
+  }
+  input:focus, select:focus, textarea:focus {
+    border-color: #6366f1 !important;
+    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.15) !important;
+  }
+
+  /* DatePicker and Select Dropdown Panels */
+  .z-\[60\].absolute,
+  .z-\[70\].absolute,
+  .absolute.z-20 {
+    background-color: #ffffff !important;
+    border-color: var(--color-border) !important;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -4px rgba(0, 0, 0, 0.08) !important;
+  }
+
+  /* 5. Hover and Background Selection Overrides */
+  .hover\:bg-white\/\[0\.07\]:hover,
+  .hover\:bg-white\/\[0\.06\]:hover,
+  .hover\:bg-white\/5:hover,
+  .hover\:bg-white\/10:hover,
+  .hover\:bg-\[\#1f233a\]:hover,
+  .hover\:bg-\[\#131622\]:hover {
+    background-color: #f1f5f9 !important;
+  }
+
+  /* Custom hover for list-items and tables */
+  .hover\:bg-white\/5:hover td,
+  .hover\:bg-white\/5:hover li {
+    background-color: #f8fafc !important;
+  }
+
+  /* Selection buttons (e.g. range buttons, type toggles) */
+  .bg-\[\#0f1117\]\/80,
+  .bg-\[\#0f1117\]\/50 {
+    background-color: #e2e8f0 !important;
+  }
+
+  /* Alert boxes styling (error / warning / info banner overrides) */
+  .bg-red-500\/10,
+  .bg-red-500\/20 {
+    background-color: #fef2f2 !important;
+    border-color: #fca5a5 !important;
+    color: #b91c1c !important;
+  }
+
+  .bg-indigo-500\/10,
+  .bg-indigo-500\/15,
+  .bg-indigo-500\/20 {
+    background-color: #e0e7ff !important;
+    border-color: #c7d2fe !important;
+    color: #4338ca !important;
+  }
+
+  .bg-emerald-500\/10,
+  .bg-emerald-500\/20 {
+    background-color: #ecfdf5 !important;
+    border-color: #a7f3d0 !important;
+    color: #047857 !important;
+  }
+
+  /* 6. Recharts Styles Overrides */
+  .recharts-cartesian-grid-horizontal line,
+  .recharts-cartesian-grid-vertical line {
+    stroke: #e2e8f0 !important;
+    stroke-opacity: 1 !important;
+  }
+  .recharts-text {
+    fill: #64748b !important;
+  }
+  .recharts-default-tooltip {
+    background-color: #ffffff !important;
+    border-color: #e2e8f0 !important;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05) !important;
+  }
+  .recharts-tooltip-item {
+    color: #1e293b !important;
+  }
+  /* Tooltip within CashFlowBarChart */
+  .bg-\[\#181d30\]\/95 {
+    background-color: rgba(255, 255, 255, 0.95) !important;
+    border-color: #e2e8f0 !important;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.08) !important;
+  }
+  .bg-\[\#181d30\]\/95 p {
+    color: #64748b !important;
+  }
+  .bg-\[\#181d30\]\/95 span {
+    color: #1e293b !important;
+  }
+
+  /* 7. Scrollbar in Light Mode */
+  ::-webkit-scrollbar-thumb {
+    background: #cbd5e1 !important; /* slate-300 */
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8 !important; /* slate-400 */
+  }
 }
