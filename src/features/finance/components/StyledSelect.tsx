@@ -99,7 +99,7 @@ export function StyledSelect({
             : "border-[#1e2235] bg-[#0f1117] hover:border-indigo-500/60"
         )}
       >
-        <span className={cn("truncate", hasValue ? "text-white" : "text-slate-500")}>
+        <span className={cn("truncate min-w-0", hasValue ? "text-white" : "text-slate-500")}>
           {selectedLabel}
         </span>
         <ChevronDown

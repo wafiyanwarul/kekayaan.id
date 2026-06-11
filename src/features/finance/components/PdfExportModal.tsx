@@ -57,7 +57,7 @@ export function PdfExportModal({ transactions, cycle, defaultCycleIndex = 0 }: P
     () =>
       yearCycles.map((c, i) => ({
         value: c.start.toISOString(),
-        label: `${c.label}${i === 0 && availableCycles[0]?.start.toISOString() === c.start.toISOString() ? " ⚡ Aktif" : ""}`,
+        label: `${c.label}${i === 0 && availableCycles[0]?.start.toISOString() === c.start.toISOString() ? " (Aktif)" : ""}`,
       })),
     [yearCycles, availableCycles]
   )
@@ -112,7 +112,7 @@ export function PdfExportModal({ transactions, cycle, defaultCycleIndex = 0 }: P
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
           onClick={(e) => e.target === e.currentTarget && setOpen(false)}
         >
-          <div className="w-full max-w-[380px] rounded-2xl border border-[#1e2235] bg-[#1a1d2e] shadow-2xl">
+          <div className="w-full max-w-[400px] rounded-2xl border border-[#1e2235] bg-[#1a1d2e] shadow-2xl">
             {/* Header */}
             <div className="flex items-center justify-between border-b border-[#1e2235] px-5 py-3.5">
               <div className="flex items-center gap-2.5">
@@ -135,9 +135,9 @@ export function PdfExportModal({ transactions, cycle, defaultCycleIndex = 0 }: P
 
             {/* Body */}
             <div className="px-5 py-4 space-y-4">
-              {/* Year + Cycle dropdowns in 2-column */}
-              <div className="grid grid-cols-[auto_1fr] gap-3 items-end">
-                <div className="space-y-1 w-24">
+              {/* Year + Cycle dropdowns stacked */}
+              <div className="space-y-3">
+                <div className="space-y-1">
                   <label className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
                     Tahun
                   </label>
@@ -150,7 +150,7 @@ export function PdfExportModal({ transactions, cycle, defaultCycleIndex = 0 }: P
                 </div>
                 <div className="space-y-1">
                   <label className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
-                    Siklus {selectedYear}
+                    Siklus Laporan
                   </label>
                   {cycleOptions.length === 0 ? (
                     <p className="rounded-lg border border-[#1e2235] bg-[#0f1117] px-3 py-2 text-xs text-slate-500">

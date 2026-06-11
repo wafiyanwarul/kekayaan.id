@@ -105,7 +105,7 @@ export function DatePicker({ value, onChange, required, id }: Props) {
 
   // Display value
   const displayText = parsed
-    ? `${String(parsed.d).padStart(2, "0")}/${String(parsed.m).padStart(2, "0")}/${parsed.y}`
+    ? `${parsed.d} ${MONTHS[parsed.m - 1].slice(0, 3)} ${parsed.y}`
     : "Pilih tanggal"
 
   const isToday = (d: number) => {
@@ -122,14 +122,14 @@ export function DatePicker({ value, onChange, required, id }: Props) {
         type="button"
         onClick={() => setOpen(o => !o)}
         className={cn(
-          "group flex w-full items-center justify-between rounded-lg border px-4 py-2.5 text-sm transition cursor-pointer",
+          "group flex w-full items-center justify-between gap-2 rounded-lg border px-3 py-2 text-sm transition cursor-pointer",
           "focus:outline-none focus:ring-2 focus:ring-indigo-500",
           open
             ? "border-indigo-500 bg-[#0f1117] ring-2 ring-indigo-500"
             : "border-[#1e2235] bg-[#0f1117] hover:border-indigo-500/60"
         )}
       >
-        <span className={parsed ? "text-white" : "text-slate-500"}>
+        <span className={cn("truncate min-w-0", parsed ? "text-white" : "text-slate-500")}>
           {displayText}
         </span>
         <Calendar

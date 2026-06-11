@@ -9,7 +9,7 @@ import { createClient } from "@/lib/supabase/client"
 /* ─────────────────── Inline SVG Illustration ─────────────────── */
 function HeroIllustration() {
   return (
-    <svg viewBox="0 0 480 420" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full max-w-2xl mx-auto drop-shadow-2xl">
+    <svg viewBox="0 0 480 420" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full max-w-[440px] xl:max-w-[480px] h-auto max-h-[250px] xl:max-h-[300px] mx-auto drop-shadow-2xl">
       {/* Background card / dashboard mockup */}
       <rect x="60" y="60" width="360" height="240" rx="18" fill="#181d30" stroke="#2a3150" strokeWidth="1.5" />
       {/* Title bar dots */}
@@ -173,7 +173,7 @@ export default function LoginPage() {
     <div className="min-h-screen flex bg-[#0a0c14]">
 
       {/* ── Left Column: Form ── */}
-      <div className="w-full lg:w-[480px] xl:w-[520px] flex flex-col justify-between px-6 sm:px-10 lg:px-14 py-8 bg-[#0f1117] relative z-10">
+      <div className="w-full lg:w-[480px] xl:w-[520px] flex flex-col justify-between px-6 sm:px-10 lg:px-14 py-5 lg:py-6 bg-[#0f1117] relative z-10 min-h-screen overflow-y-auto">
 
         {/* Logo */}
         <div className="flex items-center gap-3 max-w-sm mx-auto w-full">
@@ -188,13 +188,13 @@ export default function LoginPage() {
         </div>
 
         {/* Form Section */}
-        <div className="flex-1 flex flex-col justify-center max-w-sm mx-auto w-full">
-          <div className="space-y-1 mb-8">
-            <h1 className="text-2xl font-bold text-white tracking-tight">Masuk ke akun kamu</h1>
-            <p className="text-sm text-slate-400">Pantau kekayaan & raih tujuan finansialmu.</p>
+        <div className="my-auto py-3 flex flex-col justify-center max-w-sm mx-auto w-full">
+          <div className="space-y-1 mb-4 lg:mb-6">
+            <h1 className="text-xl lg:text-2xl font-bold text-white tracking-tight">Masuk ke akun kamu</h1>
+            <p className="text-xs lg:text-sm text-slate-400">Pantau kekayaan & raih tujuan finansialmu.</p>
           </div>
 
-          <form onSubmit={handleLogin} className="space-y-5">
+          <form onSubmit={handleLogin} className="space-y-4">
             {/* Email */}
             <div className="space-y-1.5">
               <label htmlFor="login-email" className="text-sm font-medium text-slate-300">Email</label>
@@ -205,7 +205,7 @@ export default function LoginPage() {
                 onChange={e => setEmail(e.target.value)}
                 placeholder="kamu@email.com"
                 required
-                className="w-full px-4 py-2.5 rounded-xl bg-[#151829] border border-[#1e2440] text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/70 focus:border-transparent transition"
+                className="w-full px-4 py-2 rounded-xl bg-[#151829] border border-[#1e2440] text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/70 focus:border-transparent transition"
               />
             </div>
 
@@ -225,7 +225,7 @@ export default function LoginPage() {
                   onChange={e => setPassword(e.target.value)}
                   placeholder="••••••••"
                   required
-                  className="w-full px-4 py-2.5 pr-11 rounded-xl bg-[#151829] border border-[#1e2440] text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/70 focus:border-transparent transition"
+                  className="w-full px-4 py-2 pr-11 rounded-xl bg-[#151829] border border-[#1e2440] text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/70 focus:border-transparent transition"
                 />
                 <button
                   type="button"
@@ -269,14 +269,14 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-2.5 px-4 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold rounded-xl transition-all duration-200 shadow-lg shadow-indigo-500/20 hover:shadow-indigo-500/30"
+              className="w-full py-2 px-4 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold rounded-xl transition-all duration-200 shadow-lg shadow-indigo-500/20 hover:shadow-indigo-500/30"
             >
               {loading ? "Masuk..." : "Masuk"}
             </button>
           </form>
 
           {/* Divider */}
-          <div className="flex items-center gap-4 my-6">
+          <div className="flex items-center gap-4 my-4 lg:my-5">
             <div className="flex-1 h-px bg-[#1e2440]" />
             <span className="text-xs text-slate-500 uppercase tracking-wider">atau</span>
             <div className="flex-1 h-px bg-[#1e2440]" />
@@ -287,14 +287,14 @@ export default function LoginPage() {
             type="button"
             onClick={handleGoogleLogin}
             disabled={loading}
-            className="w-full flex items-center justify-center gap-3 py-2.5 px-4 rounded-xl border border-[#1e2440] bg-[#151829] hover:bg-[#1f233a] hover:text-white text-slate-300 font-medium text-sm transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full flex items-center justify-center gap-3 py-2 px-4 rounded-xl border border-[#1e2440] bg-[#151829] hover:bg-[#1f233a] hover:text-white text-slate-300 font-medium text-sm transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <GoogleIcon />
             Masuk dengan Google
           </button>
 
           {/* Register link */}
-          <p className="text-center text-sm text-slate-400 mt-6">
+          <p className="text-center text-sm text-slate-400 mt-4 lg:mt-5">
             Belum punya akun?{" "}
             <Link href="/register" className="text-indigo-400 hover:text-indigo-300 font-medium transition">Daftar</Link>
           </p>
@@ -307,7 +307,7 @@ export default function LoginPage() {
       </div>
 
       {/* ── Right Column: Hero / Visual Panel ── */}
-      <div className="hidden lg:flex flex-1 flex-col items-center justify-center relative overflow-hidden bg-[#0a0c14]">
+      <div className="hidden lg:flex flex-1 flex-col items-center justify-center relative overflow-hidden bg-[#0a0c14] min-h-screen">
 
         {/* Background Effects */}
         <div className="absolute inset-0">
@@ -328,16 +328,16 @@ export default function LoginPage() {
         </div>
 
         {/* Content */}
-        <div className="relative z-10 max-w-xl w-full px-8 space-y-8">
+        <div className="relative z-10 max-w-xl w-full px-8 py-6 space-y-6 lg:space-y-8 flex flex-col justify-center h-full max-h-screen overflow-hidden">
           {/* Headline */}
-          <div className="space-y-4">
-            <h2 className="text-3xl xl:text-4xl font-extrabold text-white leading-tight tracking-tight">
+          <div className="space-y-3">
+            <h2 className="text-2xl xl:text-3xl font-extrabold text-white leading-tight tracking-tight">
               Semua Kekayaanmu,{" "}
               <span className="bg-gradient-to-r from-indigo-400 via-violet-400 to-purple-400 bg-clip-text text-transparent">
                 Satu Kendali Penuh.
               </span>
             </h2>
-            <p className="text-base text-slate-400 leading-relaxed">
+            <p className="text-sm xl:text-base text-slate-400 leading-relaxed">
               Lacak aset, pantau pengeluaran, dan wujudkan tujuan finansialmu — semua dalam satu dashboard cerdas yang bekerja untukmu 24/7.
             </p>
           </div>
