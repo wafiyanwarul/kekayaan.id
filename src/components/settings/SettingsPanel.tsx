@@ -970,7 +970,7 @@ export function SettingsPanel() {
       {/* SUCCESS MODAL */}
       {successModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-md">
-          <div className="w-full max-w-md rounded-2xl border border-emerald-500/25 bg-[#0e1713] p-6 shadow-2xl animate-scale-in">
+          <div className="w-full max-w-md rounded-2xl border border-emerald-500/25 bg-[#0e1713] p-6 shadow-2xl animate-scale-in max-h-[90vh] overflow-y-auto">
             <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-400">
               <Check className="h-6 w-6" />
             </div>
@@ -992,7 +992,7 @@ export function SettingsPanel() {
       {/* ERROR MODAL */}
       {errorModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-md">
-          <div className="w-full max-w-md rounded-2xl border border-red-500/25 bg-[#170e0e] p-6 shadow-2xl animate-scale-in">
+          <div className="w-full max-w-md rounded-2xl border border-red-500/25 bg-[#170e0e] p-6 shadow-2xl animate-scale-in max-h-[90vh] overflow-y-auto">
             <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-500/10 text-red-400">
               <AlertCircle className="h-6 w-6" />
             </div>
@@ -1014,7 +1014,7 @@ export function SettingsPanel() {
       {/* WARNING MODAL FOR SYSTEM TOGGLES */}
       {showWarningModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-md">
-          <div className="w-full max-w-lg rounded-2xl border border-red-500/30 bg-[#16131c] p-6 shadow-2xl animate-scale-in">
+          <div className="w-full max-w-lg rounded-2xl border border-red-500/30 bg-[#16131c] p-6 shadow-2xl animate-scale-in max-h-[90vh] overflow-y-auto">
             <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-500/10 text-red-500">
               <AlertTriangle className="h-6 w-6" />
             </div>
@@ -1054,7 +1054,7 @@ export function SettingsPanel() {
       {/* MAINTENANCE ACTIVATION ON MODAL */}
       {showMaintenanceOnModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-md">
-          <div className="w-full max-w-lg rounded-2xl border border-amber-500/25 bg-[#17140f] p-6 shadow-2xl animate-scale-in">
+          <div className="w-full max-w-lg rounded-2xl border border-amber-500/25 bg-[#17140f] p-6 shadow-2xl animate-scale-in max-h-[90vh] overflow-y-auto">
             <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-amber-500/10 text-amber-400">
               <Wrench className="h-6 w-6" />
             </div>
@@ -1152,7 +1152,7 @@ export function SettingsPanel() {
       {/* MAINTENANCE DEACTIVATION OFF MODAL */}
       {showMaintenanceOffModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-md">
-          <div className="w-full max-w-lg rounded-2xl border border-emerald-500/25 bg-[#0f1712] p-6 shadow-2xl animate-scale-in">
+          <div className="w-full max-w-lg rounded-2xl border border-emerald-500/25 bg-[#0f1712] p-6 shadow-2xl animate-scale-in max-h-[90vh] overflow-y-auto">
             <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-400">
               <CheckCircle2 className="h-6 w-6" />
             </div>
@@ -1235,7 +1235,7 @@ export function SettingsPanel() {
       {/* CONFIRM ADD CATEGORY MODAL */}
       {showAddCatConfirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-md">
-          <div className="w-full max-w-md rounded-2xl border border-indigo-500/20 bg-[#121420] p-6 shadow-2xl animate-scale-in">
+          <div className="w-full max-w-md rounded-2xl border border-indigo-500/20 bg-[#121420] p-6 shadow-2xl animate-scale-in max-h-[90vh] overflow-y-auto">
             <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-indigo-500/10 text-indigo-400">
               <Plus className="h-6 w-6" />
             </div>
@@ -1279,7 +1279,7 @@ export function SettingsPanel() {
       {/* CONFIRM DELETE CATEGORY MODAL */}
       {showDeleteCatConfirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-md">
-          <div className="w-full max-w-md rounded-2xl border border-red-500/20 bg-[#201212] p-6 shadow-2xl animate-scale-in">
+          <div className="w-full max-w-md rounded-2xl border border-red-500/20 bg-[#201212] p-6 shadow-2xl animate-scale-in max-h-[90vh] overflow-y-auto">
             <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-500/10 text-red-400">
               <Trash2 className="h-6 w-6" />
             </div>
@@ -1314,7 +1314,7 @@ export function SettingsPanel() {
       {/* CONFIRM ROLE CHANGE MODAL */}
       {showRoleChangeConfirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-md">
-          <div className="w-full max-w-md rounded-2xl border border-indigo-500/20 bg-[#121420] p-6 shadow-2xl animate-scale-in">
+          <div className="w-full max-w-md rounded-2xl border border-indigo-500/20 bg-[#121420] p-6 shadow-2xl animate-scale-in max-h-[90vh] overflow-y-auto">
             <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-indigo-500/10 text-indigo-400">
               <Shield className="h-6 w-6" />
             </div>
@@ -1360,7 +1360,7 @@ export function SettingsPanel() {
       {/* CONFIRM APPROVAL MODAL */}
       {showApprovalConfirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-md">
-          <div className="w-full max-w-md rounded-2xl border border-indigo-500/20 bg-[#121420] p-6 shadow-2xl animate-scale-in">
+          <div className="w-full max-w-md rounded-2xl border border-indigo-500/20 bg-[#121420] p-6 shadow-2xl animate-scale-in max-h-[90vh] overflow-y-auto">
             <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-indigo-500/10 text-indigo-400">
               <UserPlus className="h-6 w-6" />
             </div>
@@ -1411,6 +1411,11 @@ export function SettingsPanel() {
 // ── Change Password Card ───────────────────────────────────────────────────
 
 function ChangePasswordCard() {
+  const [flowMode, setFlowMode] = useState<"change" | "otp_verify" | "otp_reset">("change")
+  const [email, setEmail] = useState("")
+  const [otpCode, setOtpCode] = useState("")
+  const [resendTimer, setResendTimer] = useState(0)
+
   const [currentPassword, setCurrentPassword] = useState("")
   const [newPassword, setNewPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
@@ -1420,6 +1425,111 @@ function ChangePasswordCard() {
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState(false)
   const [error, setError] = useState("")
+
+  // Fetch current user email on mount
+  useEffect(() => {
+    async function getEmail() {
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user?.email) {
+        setEmail(user.email)
+      }
+    }
+    getEmail()
+  }, [])
+
+  // Timer cooldown logic
+  useEffect(() => {
+    if (resendTimer > 0) {
+      const timerId = setTimeout(() => setResendTimer(resendTimer - 1), 1000)
+      return () => clearTimeout(timerId)
+    }
+  }, [resendTimer])
+
+  async function handleRequestOTP() {
+    if (!email) {
+      setError("Email tidak valid atau belum dimuat.")
+      return
+    }
+
+    setLoading(true)
+    setError("")
+    setSuccess(false)
+
+    try {
+      const supabase = createClient()
+      const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/auth/callback?type=recovery&next=/settings`,
+      })
+      if (resetError) throw resetError
+
+      setFlowMode("otp_verify")
+      setResendTimer(60) // 1 minute cooldown
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Gagal mengirim OTP.")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  async function handleVerifyOTP(e: React.FormEvent) {
+    e.preventDefault()
+    if (!otpCode) {
+      setError("Kode OTP harus diisi.")
+      return
+    }
+
+    setLoading(true)
+    setError("")
+
+    try {
+      const supabase = createClient()
+      const { error: verifyError } = await supabase.auth.verifyOtp({
+        email,
+        token: otpCode,
+        type: "recovery",
+      })
+      if (verifyError) throw verifyError
+
+      setFlowMode("otp_reset")
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Kode OTP tidak valid atau kedaluwarsa.")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  async function handleResetPasswordWithOTP(e: React.FormEvent) {
+    e.preventDefault()
+    setError("")
+    setSuccess(false)
+
+    if (newPassword.length < 6) {
+      setError("Password baru minimal 6 karakter.")
+      return
+    }
+    if (newPassword !== confirmPassword) {
+      setError("Konfirmasi password tidak cocok.")
+      return
+    }
+
+    setLoading(true)
+    try {
+      const supabase = createClient()
+      const { error: updateError } = await supabase.auth.updateUser({ password: newPassword })
+      if (updateError) throw updateError
+
+      setSuccess(true)
+      setFlowMode("change")
+      setNewPassword("")
+      setConfirmPassword("")
+      setOtpCode("")
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Gagal mengubah password.")
+    } finally {
+      setLoading(false)
+    }
+  }
 
   async function handleChangePassword(e: React.FormEvent) {
     e.preventDefault()
@@ -1473,98 +1583,249 @@ function ChangePasswordCard() {
         </div>
       </div>
 
-      <form onSubmit={handleChangePassword} className="space-y-4 max-w-md">
-        <div className="space-y-1.5">
-          <label className="text-sm font-medium text-slate-300">Password Saat Ini</label>
-          <div className="relative">
-            <input
-              type={showCurrent ? "text" : "password"}
-              value={currentPassword}
-              onChange={e => setCurrentPassword(e.target.value)}
-              placeholder="Password saat ini"
-              required
-              className="w-full px-4 py-2.5 pr-11 rounded-lg bg-[#0f1117] border border-[#1e2235] text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition text-sm"
-            />
-            <button type="button" onClick={() => setShowCurrent(v => !v)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition cursor-pointer">
-              {showCurrent ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-            </button>
+      {flowMode === "change" && (
+        <form onSubmit={handleChangePassword} className="space-y-4 max-w-md">
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between">
+              <label className="text-sm font-medium text-slate-300">Password Saat Ini</label>
+              <button
+                type="button"
+                onClick={handleRequestOTP}
+                disabled={loading}
+                className="text-xs text-indigo-400 hover:text-indigo-300 hover:underline transition cursor-pointer disabled:opacity-50"
+              >
+                Lupa password?
+              </button>
+            </div>
+            <div className="relative">
+              <input
+                type={showCurrent ? "text" : "password"}
+                value={currentPassword}
+                onChange={e => setCurrentPassword(e.target.value)}
+                placeholder="Password saat ini"
+                required
+                className="w-full px-4 py-2.5 pr-11 rounded-lg bg-[#0f1117] border border-[#1e2235] text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition text-sm"
+              />
+              <button type="button" onClick={() => setShowCurrent(v => !v)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition cursor-pointer">
+                {showCurrent ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
+            </div>
           </div>
-        </div>
 
-        <div className="space-y-1.5">
-          <label className="text-sm font-medium text-slate-300">Password Baru</label>
-          <div className="relative">
-            <input
-              type={showNew ? "text" : "password"}
-              value={newPassword}
-              onChange={e => setNewPassword(e.target.value)}
-              placeholder="Min. 6 karakter"
-              required
-              minLength={6}
-              className="w-full px-4 py-2.5 pr-11 rounded-lg bg-[#0f1117] border border-[#1e2235] text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition text-sm"
-            />
-            <button type="button" onClick={() => setShowNew(v => !v)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition cursor-pointer">
-              {showNew ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-            </button>
+          <div className="space-y-1.5">
+            <label className="text-sm font-medium text-slate-300">Password Baru</label>
+            <div className="relative">
+              <input
+                type={showNew ? "text" : "password"}
+                value={newPassword}
+                onChange={e => setNewPassword(e.target.value)}
+                placeholder="Min. 6 karakter"
+                required
+                minLength={6}
+                className="w-full px-4 py-2.5 pr-11 rounded-lg bg-[#0f1117] border border-[#1e2235] text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition text-sm"
+              />
+              <button type="button" onClick={() => setShowNew(v => !v)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition cursor-pointer">
+                {showNew ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
+            </div>
           </div>
-        </div>
 
-        <div className="space-y-1.5">
-          <label className="text-sm font-medium text-slate-300">Konfirmasi Password Baru</label>
-          <div className="relative">
+          <div className="space-y-1.5">
+            <label className="text-sm font-medium text-slate-300">Konfirmasi Password Baru</label>
+            <div className="relative">
+              <input
+                type={showConfirm ? "text" : "password"}
+                value={confirmPassword}
+                onChange={e => setConfirmPassword(e.target.value)}
+                placeholder="Ulangi password baru"
+                required
+                className={cn(
+                  "w-full px-4 py-2.5 pr-11 rounded-lg bg-[#0f1117] border text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 transition text-sm",
+                  confirmPassword && newPassword !== confirmPassword
+                    ? "border-red-500/50 focus:ring-red-500"
+                    : "border-[#1e2235] focus:ring-indigo-500"
+                )}
+              />
+              <button type="button" onClick={() => setShowConfirm(v => !v)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition cursor-pointer">
+                {showConfirm ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
+            </div>
+            {confirmPassword && newPassword !== confirmPassword && (
+              <p className="text-xs text-red-400">Password tidak cocok</p>
+            )}
+          </div>
+
+          {error && (
+            <div className="rounded-lg border border-red-500/20 bg-red-500/10 px-4 py-2.5 text-sm text-red-400">
+              {error}
+            </div>
+          )}
+
+          {success && (
+            <div className="flex items-center gap-2 rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-4 py-2.5 text-sm text-emerald-400">
+              <CheckCircle2 className="h-4 w-4 shrink-0" />
+              Password berhasil diubah!
+            </div>
+          )}
+
+          <button
+            type="submit"
+            disabled={loading || (confirmPassword.length > 0 && newPassword !== confirmPassword)}
+            className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-slate-50 transition duration-200 hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer"
+          >
+            {loading ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Menyimpan...
+              </>
+            ) : (
+              "Simpan Password Baru"
+            )}
+          </button>
+        </form>
+      )}
+
+      {flowMode === "otp_verify" && (
+        <form onSubmit={handleVerifyOTP} className="space-y-4 max-w-md">
+          <div className="rounded-lg bg-indigo-500/10 border border-indigo-500/20 p-3.5 text-xs text-indigo-300 leading-relaxed">
+            Kami telah mengirimkan kode OTP / link pemulihan ke email Anda: <span className="font-semibold text-white">{email}</span>. Silakan masukkan kode tersebut di bawah ini untuk memverifikasi.
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-sm font-medium text-slate-300">Kode OTP / Reset</label>
             <input
-              type={showConfirm ? "text" : "password"}
-              value={confirmPassword}
-              onChange={e => setConfirmPassword(e.target.value)}
-              placeholder="Ulangi password baru"
+              type="text"
+              value={otpCode}
+              onChange={e => setOtpCode(e.target.value)}
+              placeholder="Masukkan kode OTP"
               required
-              className={cn(
-                "w-full px-4 py-2.5 pr-11 rounded-lg bg-[#0f1117] border text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 transition text-sm",
-                confirmPassword && newPassword !== confirmPassword
-                  ? "border-red-500/50 focus:ring-red-500"
-                  : "border-[#1e2235] focus:ring-indigo-500"
+              className="w-full px-4 py-2.5 rounded-lg bg-[#0f1117] border border-[#1e2235] text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition text-sm text-center font-mono tracking-widest text-lg font-semibold"
+            />
+          </div>
+
+          {error && (
+            <div className="rounded-lg border border-red-500/20 bg-red-500/10 px-4 py-2.5 text-sm text-red-400">
+              {error}
+            </div>
+          )}
+
+          <div className="flex flex-col gap-2 pt-2 sm:flex-row sm:items-center">
+            <button
+              type="submit"
+              disabled={loading || otpCode.trim().length < 4}
+              className="flex-1 inline-flex items-center justify-center gap-2 rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-slate-50 transition duration-200 hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer"
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Memverifikasi...
+                </>
+              ) : (
+                "Verifikasi Kode OTP"
               )}
-            />
-            <button type="button" onClick={() => setShowConfirm(v => !v)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition cursor-pointer">
-              {showConfirm ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            </button>
+            
+            <button
+              type="button"
+              onClick={handleRequestOTP}
+              disabled={loading || resendTimer > 0}
+              className="rounded-lg border border-[#1e2235] px-4 py-2.5 text-sm font-semibold text-slate-300 hover:text-white transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {resendTimer > 0 ? `Kirim Ulang (${resendTimer}s)` : "Kirim Ulang"}
             </button>
           </div>
-          {confirmPassword && newPassword !== confirmPassword && (
-            <p className="text-xs text-red-400">Password tidak cocok</p>
-          )}
-        </div>
 
-        {error && (
-          <div className="rounded-lg border border-red-500/20 bg-red-500/10 px-4 py-2.5 text-sm text-red-400">
-            {error}
-          </div>
-        )}
+          <button
+            type="button"
+            onClick={() => {
+              setFlowMode("change")
+              setError("")
+              setOtpCode("")
+            }}
+            className="text-xs text-slate-400 hover:text-white transition flex items-center gap-1 mt-2 cursor-pointer"
+          >
+            <ChevronLeft className="h-3.5 w-3.5" /> Kembali ke ganti password biasa
+          </button>
+        </form>
+      )}
 
-        {success && (
-          <div className="flex items-center gap-2 rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-4 py-2.5 text-sm text-emerald-400">
+      {flowMode === "otp_reset" && (
+        <form onSubmit={handleResetPasswordWithOTP} className="space-y-4 max-w-md">
+          <div className="rounded-lg bg-emerald-500/10 border border-emerald-500/20 p-3.5 text-xs text-emerald-400 leading-relaxed flex items-center gap-2">
             <CheckCircle2 className="h-4 w-4 shrink-0" />
-            Password berhasil diubah!
+            OTP Berhasil Diverifikasi! Silakan atur password baru Anda.
           </div>
-        )}
 
-        <button
-          type="submit"
-          disabled={loading || (confirmPassword.length > 0 && newPassword !== confirmPassword)}
-          className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-slate-50 transition duration-200 hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer"
-        >
-          {loading ? (
-            <>
-              <Loader2 className="h-4 w-4 animate-spin" />
-              Menyimpan...
-            </>
-          ) : (
-            "Simpan Password Baru"
+          <div className="space-y-1.5">
+            <label className="text-sm font-medium text-slate-300">Password Baru</label>
+            <div className="relative">
+              <input
+                type={showNew ? "text" : "password"}
+                value={newPassword}
+                onChange={e => setNewPassword(e.target.value)}
+                placeholder="Min. 6 karakter"
+                required
+                minLength={6}
+                className="w-full px-4 py-2.5 pr-11 rounded-lg bg-[#0f1117] border border-[#1e2235] text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition text-sm"
+              />
+              <button type="button" onClick={() => setShowNew(v => !v)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition cursor-pointer">
+                {showNew ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
+            </div>
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-sm font-medium text-slate-300">Konfirmasi Password Baru</label>
+            <div className="relative">
+              <input
+                type={showConfirm ? "text" : "password"}
+                value={confirmPassword}
+                onChange={e => setConfirmPassword(e.target.value)}
+                placeholder="Ulangi password baru"
+                required
+                className={cn(
+                  "w-full px-4 py-2.5 pr-11 rounded-lg bg-[#0f1117] border text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 transition text-sm",
+                  confirmPassword && newPassword !== confirmPassword
+                    ? "border-red-500/50 focus:ring-red-500"
+                    : "border-[#1e2235] focus:ring-indigo-500"
+                )}
+              />
+              <button type="button" onClick={() => setShowConfirm(v => !v)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition cursor-pointer">
+                {showConfirm ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
+            </div>
+            {confirmPassword && newPassword !== confirmPassword && (
+              <p className="text-xs text-red-400">Password tidak cocok</p>
+            )}
+          </div>
+
+          {error && (
+            <div className="rounded-lg border border-red-500/20 bg-red-500/10 px-4 py-2.5 text-sm text-red-400">
+              {error}
+            </div>
           )}
-        </button>
-      </form>
+
+          <button
+            type="submit"
+            disabled={loading || (confirmPassword.length > 0 && newPassword !== confirmPassword)}
+            className="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-slate-50 transition duration-200 hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer"
+          >
+            {loading ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Menyimpan Password Baru...
+              </>
+            ) : (
+              "Simpan Password Baru"
+            )}
+          </button>
+        </form>
+      )}
     </section>
   )
 }
