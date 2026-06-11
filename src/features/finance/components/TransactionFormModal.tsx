@@ -114,9 +114,9 @@ export function TransactionFormModal({ categories, transaction, userId, onClose,
                 className={`rounded-md px-3 py-1.5 text-sm font-semibold transition cursor-pointer ${
                   type === option
                     ? option === "income"
-                      ? "bg-emerald-500/20 text-emerald-200"
-                      : "bg-rose-500/20 text-rose-200"
-                    : "text-slate-400 hover:bg-white/5 hover:text-white"
+                      ? "bg-emerald-500/15 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-200"
+                      : "bg-rose-500/15 dark:bg-rose-500/20 text-rose-700 dark:text-rose-200"
+                    : "text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5 hover:text-slate-900 dark:hover:text-white"
                 }`}
               >
                 {option === "income" ? "Pemasukan" : "Pengeluaran"}
