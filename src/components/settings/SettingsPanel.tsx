@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, useMemo } from "react"
+import { useEffect, useState, useMemo, useRef } from "react"
 import {
   AlertTriangle,
   CheckCircle2,
@@ -1413,7 +1413,8 @@ export function SettingsPanel() {
 function ChangePasswordCard() {
   const [flowMode, setFlowMode] = useState<"change" | "otp_verify" | "otp_reset">("change")
   const [email, setEmail] = useState("")
-  const [otpCode, setOtpCode] = useState("")
+  const [displayName, setDisplayName] = useState("")
+  const [otpArray, setOtpArray] = useState<string[]>(new Array(6).fill(""))
   const [resendTimer, setResendTimer] = useState(0)
 
   const [currentPassword, setCurrentPassword] = useState("")
@@ -1426,16 +1427,20 @@ function ChangePasswordCard() {
   const [success, setSuccess] = useState(false)
   const [error, setError] = useState("")
 
-  // Fetch current user email on mount
+  const inputRefs = useRef<(HTMLInputElement | null)[]>([])
+
+  // Fetch current user email and displayName on mount
   useEffect(() => {
-    async function getEmail() {
+    async function getUserData() {
       const supabase = createClient()
       const { data: { user } } = await supabase.auth.getUser()
-      if (user?.email) {
-        setEmail(user.email)
+      if (user) {
+        setEmail(user.email || "")
+        const name = user.user_metadata?.full_name || user.email?.split("@")[0] || "User"
+        setDisplayName(name)
       }
     }
-    getEmail()
+    getUserData()
   }, [])
 
   // Timer cooldown logic
@@ -1445,6 +1450,57 @@ function ChangePasswordCard() {
       return () => clearTimeout(timerId)
     }
   }, [resendTimer])
+
+  const handleOtpChange = (val: string, index: number) => {
+    const cleanVal = val.replace(/[^0-9]/g, "")
+    if (!cleanVal) {
+      const newOtp = [...otpArray]
+      newOtp[index] = ""
+      setOtpArray(newOtp)
+      return
+    }
+
+    const newOtp = [...otpArray]
+    newOtp[index] = cleanVal.charAt(cleanVal.length - 1)
+    setOtpArray(newOtp)
+
+    if (index < 5) {
+      inputRefs.current[index + 1]?.focus()
+    }
+  }
+
+  const handleOtpKeyDown = (e: React.KeyboardEvent<HTMLInputElement>, index: number) => {
+    if (e.key === "Backspace") {
+      if (!otpArray[index] && index > 0) {
+        const newOtp = [...otpArray]
+        newOtp[index - 1] = ""
+        setOtpArray(newOtp)
+        inputRefs.current[index - 1]?.focus()
+      } else {
+        const newOtp = [...otpArray]
+        newOtp[index] = ""
+        setOtpArray(newOtp)
+      }
+    }
+  }
+
+  const handleOtpPaste = (e: React.ClipboardEvent) => {
+    e.preventDefault()
+    const pasted = e.clipboardData.getData("text")
+    const cleanPasted = pasted.replace(/[^0-9]/g, "").slice(0, 6)
+    if (cleanPasted.length === 0) return
+
+    const newOtp = [...otpArray]
+    for (let i = 0; i < 6; i++) {
+      if (i < cleanPasted.length) {
+        newOtp[i] = cleanPasted[i]
+      }
+    }
+    setOtpArray(newOtp)
+    
+    const focusIndex = Math.min(cleanPasted.length, 5)
+    inputRefs.current[focusIndex]?.focus()
+  }
 
   async function handleRequestOTP() {
     if (!email) {
@@ -1465,6 +1521,8 @@ function ChangePasswordCard() {
 
       setFlowMode("otp_verify")
       setResendTimer(60) // 1 minute cooldown
+      setOtpArray(new Array(6).fill(""))
+      setTimeout(() => inputRefs.current[0]?.focus(), 100)
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Gagal mengirim OTP.")
     } finally {
@@ -1474,8 +1532,9 @@ function ChangePasswordCard() {
 
   async function handleVerifyOTP(e: React.FormEvent) {
     e.preventDefault()
-    if (!otpCode) {
-      setError("Kode OTP harus diisi.")
+    const otpCode = otpArray.join("")
+    if (otpCode.length < 6) {
+      setError("Kode OTP harus lengkap 6 digit.")
       return
     }
 
@@ -1523,7 +1582,7 @@ function ChangePasswordCard() {
       setFlowMode("change")
       setNewPassword("")
       setConfirmPassword("")
-      setOtpCode("")
+      setOtpArray(new Array(6).fill(""))
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Gagal mengubah password.")
     } finally {
@@ -1689,34 +1748,46 @@ function ChangePasswordCard() {
       )}
 
       {flowMode === "otp_verify" && (
-        <form onSubmit={handleVerifyOTP} className="space-y-4 max-w-md">
-          <div className="rounded-lg bg-indigo-500/10 border border-indigo-500/20 p-3.5 text-xs text-indigo-300 leading-relaxed">
-            Kami telah mengirimkan kode OTP / link pemulihan ke email Anda: <span className="font-semibold text-white">{email}</span>. Silakan masukkan kode tersebut di bawah ini untuk memverifikasi.
+        <form onSubmit={handleVerifyOTP} className="space-y-6 max-w-md animate-fade-in">
+          <div className="text-left space-y-1">
+            <h4 className="text-sm font-bold text-white">
+              Halo {displayName}! 👋
+            </h4>
+            <p className="text-xs text-slate-400 leading-relaxed">
+              Silakan masukkan 6 digit kode OTP yang kami kirimkan ke email:
+              <span className="block text-indigo-400 font-semibold mt-1 break-all">{email}</span>
+            </p>
           </div>
 
-          <div className="space-y-1.5">
-            <label className="text-sm font-medium text-slate-300">Kode OTP / Reset</label>
-            <input
-              type="text"
-              value={otpCode}
-              onChange={e => setOtpCode(e.target.value)}
-              placeholder="Masukkan kode OTP"
-              required
-              className="w-full px-4 py-2.5 rounded-lg bg-[#0f1117] border border-[#1e2235] text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition text-sm text-center font-mono tracking-widest text-lg font-semibold"
-            />
+          <div className="flex justify-start gap-2 py-1" onPaste={handleOtpPaste}>
+            {otpArray.map((digit, index) => (
+              <input
+                key={index}
+                type="text"
+                maxLength={1}
+                value={digit}
+                onChange={e => handleOtpChange(e.target.value, index)}
+                onKeyDown={e => handleOtpKeyDown(e, index)}
+                ref={el => {
+                  inputRefs.current[index] = el
+                }}
+                disabled={loading}
+                className="w-12 h-14 text-center text-2xl font-bold rounded-xl bg-[#0f1117] border border-[#1e2235] text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all disabled:opacity-50"
+              />
+            ))}
           </div>
 
           {error && (
-            <div className="rounded-lg border border-red-500/20 bg-red-500/10 px-4 py-2.5 text-sm text-red-400">
+            <div className="rounded-lg border border-red-500/20 bg-red-500/10 px-4 py-2.5 text-sm text-red-400 animate-shake">
               {error}
             </div>
           )}
 
-          <div className="flex flex-col gap-2 pt-2 sm:flex-row sm:items-center">
+          <div className="flex flex-col gap-2.5 pt-1 sm:flex-row sm:items-center">
             <button
               type="submit"
-              disabled={loading || otpCode.trim().length < 4}
-              className="flex-1 inline-flex items-center justify-center gap-2 rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-slate-50 transition duration-200 hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer"
+              disabled={loading || otpArray.join("").length < 6}
+              className="flex-1 inline-flex items-center justify-center gap-2 rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-slate-50 transition duration-200 hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer text-white-force"
             >
               {loading ? (
                 <>
@@ -1743,7 +1814,7 @@ function ChangePasswordCard() {
             onClick={() => {
               setFlowMode("change")
               setError("")
-              setOtpCode("")
+              setOtpArray(new Array(6).fill(""))
             }}
             className="text-xs text-slate-400 hover:text-white transition flex items-center gap-1 mt-2 cursor-pointer"
           >
@@ -1753,7 +1824,7 @@ function ChangePasswordCard() {
       )}
 
       {flowMode === "otp_reset" && (
-        <form onSubmit={handleResetPasswordWithOTP} className="space-y-4 max-w-md">
+        <form onSubmit={handleResetPasswordWithOTP} className="space-y-4 max-w-md animate-fade-in">
           <div className="rounded-lg bg-emerald-500/10 border border-emerald-500/20 p-3.5 text-xs text-emerald-400 leading-relaxed flex items-center gap-2">
             <CheckCircle2 className="h-4 w-4 shrink-0" />
             OTP Berhasil Diverifikasi! Silakan atur password baru Anda.
@@ -1813,7 +1884,7 @@ function ChangePasswordCard() {
           <button
             type="submit"
             disabled={loading || (confirmPassword.length > 0 && newPassword !== confirmPassword)}
-            className="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-slate-50 transition duration-200 hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer"
+            className="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-slate-50 transition duration-200 hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer text-white-force"
           >
             {loading ? (
               <>
