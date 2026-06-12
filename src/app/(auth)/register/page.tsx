@@ -175,20 +175,22 @@ export default function RegisterPage() {
       {/* ── Left Column: Form ── */}
       <div className="w-full lg:w-[480px] xl:w-[520px] flex flex-col justify-between px-6 sm:px-10 lg:px-14 py-5 lg:py-6 bg-[#0f1117] relative z-10 min-h-screen overflow-y-auto">
 
-        {/* Logo */}
-        <div className="flex items-center gap-3 max-w-sm mx-auto w-full">
-          <Image
-            src="/android-chrome-192x192.png"
-            alt="kekayaan.id logo"
-            width={36}
-            height={36}
-            className="rounded-lg"
-          />
-          <span className="text-lg font-bold text-white tracking-tight">kekayaan.id</span>
-        </div>
-
         {/* Form Section */}
         <div className="my-auto py-3 flex flex-col justify-center max-w-sm mx-auto w-full">
+          {/* Logo Centered */}
+          <div className="flex flex-col items-center justify-center text-center gap-2 mb-6">
+            <div className="relative flex items-center justify-center w-14 h-14 rounded-2xl bg-indigo-500/10 border border-indigo-500/25 shadow-lg animate-pulse-glow">
+              <Image
+                src="/android-chrome-192x192.png"
+                alt="kekayaan.id logo"
+                width={36}
+                height={36}
+                className="rounded-xl animate-float"
+              />
+            </div>
+            <span className="text-xl font-extrabold text-white tracking-widest mt-1">kekayaan.id</span>
+          </div>
+
           <div className="space-y-1 mb-4 lg:mb-6">
             <h1 className="text-xl lg:text-2xl font-bold text-white tracking-tight">Buat akun baru</h1>
             <p className="text-xs lg:text-sm text-slate-400">Mulai kelola dan pantau kekayaanmu sekarang.</p>

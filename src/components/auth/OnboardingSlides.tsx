@@ -9,6 +9,30 @@ interface OnboardingSlidesProps {
 export function OnboardingSlides({ onComplete }: OnboardingSlidesProps) {
   const [currentSlide, setCurrentSlide] = useState(0)
   const containerRef = useRef<HTMLDivElement>(null)
+  const [splashStep, setSplashStep] = useState<"loading" | "logo" | "fadeout" | "complete">("loading")
+
+  useEffect(() => {
+    // Stage 1: Loading animation (0 to 1200ms)
+    const logoTimer = setTimeout(() => {
+      setSplashStep("logo")
+    }, 1200)
+
+    // Stage 2: Logo reveal (1200ms to 2400ms)
+    const fadeoutTimer = setTimeout(() => {
+      setSplashStep("fadeout")
+    }, 2400)
+
+    // Stage 3: Fade out splash overlay (2400ms to 2800ms)
+    const completeTimer = setTimeout(() => {
+      setSplashStep("complete")
+    }, 2800)
+
+    return () => {
+      clearTimeout(logoTimer)
+      clearTimeout(fadeoutTimer)
+      clearTimeout(completeTimer)
+    }
+  }, [])
 
   const slides = [
     {
@@ -163,6 +187,56 @@ export function OnboardingSlides({ onComplete }: OnboardingSlidesProps) {
           )}
         </button>
       </div>
+
+      {/* Splash Screen Overlay */}
+      {splashStep !== "complete" && (
+        <div
+          className={`fixed inset-0 z-[110] flex flex-col items-center justify-center bg-[#0b0c14] transition-opacity duration-500 select-none ${
+            splashStep === "fadeout" ? "opacity-0 pointer-events-none" : "opacity-100"
+          }`}
+        >
+          {/* Ambient Glowing Background */}
+          <div className="absolute w-[300px] h-[300px] rounded-full bg-indigo-500/10 blur-3xl animate-pulse" />
+          
+          <div className="relative flex flex-col items-center justify-center">
+            {/* Stage 1: Geometric Loading Orbit */}
+            {splashStep === "loading" && (
+              <div className="relative w-20 h-20 flex items-center justify-center animate-scale-in">
+                {/* Pulsing inner glow */}
+                <div className="absolute inset-2 bg-indigo-500/20 rounded-full blur-md animate-ping" />
+                {/* Double spinning rings */}
+                <div className="absolute inset-0 border-2 border-transparent border-t-indigo-500 border-r-indigo-500 rounded-full animate-spin" style={{ animationDuration: '0.8s' }} />
+                <div className="absolute inset-2 border-2 border-transparent border-b-violet-500 border-l-violet-500 rounded-full animate-spin" style={{ animationDuration: '1.2s', animationDirection: 'reverse' }} />
+              </div>
+            )}
+
+            {/* Stage 2 & 3: Logo Reveal with Neon Glow */}
+            {(splashStep === "logo" || splashStep === "fadeout") && (
+              <div className="flex flex-col items-center gap-5 animate-scale-in">
+                {/* Glow ring behind logo */}
+                <div className="relative flex items-center justify-center w-24 h-24 rounded-3xl bg-indigo-500/10 border border-indigo-500/25 shadow-2xl shadow-indigo-500/20 animate-pulse-glow">
+                  <div className="absolute inset-0 bg-indigo-500/20 rounded-3xl blur-md" />
+                  <img
+                    src="/android-chrome-192x192.png"
+                    alt="kekayaan.id logo"
+                    className="w-14 h-14 rounded-2xl relative z-10 animate-float"
+                  />
+                </div>
+                
+                {/* Text reveal */}
+                <div className="text-center space-y-1 mt-2">
+                  <h2 className="text-2xl font-extrabold tracking-widest text-white uppercase bg-gradient-to-r from-indigo-200 via-white to-violet-200 bg-clip-text text-transparent animate-fade-in">
+                    kekayaan.id
+                  </h2>
+                  <p className="text-[10px] tracking-widest uppercase text-slate-500 font-semibold animate-fade-in-delayed">
+                    Personal Wealth OS
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   )
 }

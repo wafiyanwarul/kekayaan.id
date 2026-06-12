@@ -387,7 +387,7 @@ export function FinanceClient({ cycle, initialCategories, initialTransactions, u
           </div>
         </div>
 
-        <div className="flex flex-wrap gap-2">
+        <div className="grid grid-cols-3 gap-2 w-full sm:flex sm:w-auto">
           <PdfExportModal
             transactions={transactions}
             cycle={cycle}
@@ -396,23 +396,23 @@ export function FinanceClient({ cycle, initialCategories, initialTransactions, u
           <button
             type="button"
             onClick={() => setShowMutasiModal(true)}
-            className="inline-flex items-center gap-2 rounded-lg border border-indigo-500/40 bg-indigo-500/10 px-4 py-2 text-sm font-medium text-indigo-300 transition hover:bg-indigo-500/20 hover:text-indigo-200 cursor-pointer"
+            className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg border border-indigo-500/30 bg-indigo-500/5 px-2 sm:px-4 py-2 text-xs sm:text-sm font-medium text-indigo-300 transition hover:bg-indigo-500/15 hover:text-indigo-200 active:scale-95 duration-200 cursor-pointer"
           >
-            <FileText className="h-4 w-4" />
+            <FileText className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" />
             Import Mutasi
           </button>
           <button
             type="button"
             onClick={openNewModal}
-            className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition hover:bg-primary/90 cursor-pointer"
+            className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg bg-indigo-600 px-2 sm:px-4 py-2 text-xs sm:text-sm font-semibold text-white transition hover:bg-indigo-500 shadow-lg shadow-indigo-500/20 active:scale-95 duration-200 cursor-pointer"
           >
-            <Plus className="h-4 w-4" />
-            Transaksi
+            <Plus className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" />
+            + Transaksi
           </button>
         </div>
       </div>
 
-      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-3 grid-cols-2 xl:grid-cols-4">
         <FinanceStatCard
           icon={ArrowUpRight}
           label="Pemasukan"
@@ -993,22 +993,22 @@ function FinanceStatCard({
   value: React.ReactNode
 }) {
   return (
-    <div className="rounded-xl border bg-card p-5">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{label}</p>
-          <p className="mt-3 text-2xl font-bold text-white">{value}</p>
-          <p className="mt-1 text-xs text-muted-foreground">{sub}</p>
+    <div className="rounded-xl border bg-card p-3 sm:p-5">
+      <div className="flex items-start justify-between gap-2 sm:gap-3">
+        <div className="min-w-0">
+          <p className="text-[10px] sm:text-xs font-semibold uppercase tracking-wide text-muted-foreground truncate leading-tight">{label}</p>
+          <p className="mt-2 text-base sm:text-lg md:text-2xl font-extrabold text-white leading-none">{value}</p>
+          <p className="mt-1.5 text-[9px] sm:text-xs text-muted-foreground truncate leading-tight">{sub}</p>
         </div>
         <div
           className={cn(
-            "rounded-lg p-2",
+            "rounded-lg p-1.5 sm:p-2 shrink-0 ml-1",
             tone === "income" && "bg-emerald-500/15 text-emerald-300",
             tone === "expense" && "bg-rose-500/15 text-rose-300",
             tone === "neutral" && "bg-indigo-500/15 text-indigo-300"
           )}
         >
-          <Icon className="h-5 w-5" />
+          <Icon className="h-3.5 w-3.5 sm:h-5 sm:w-5" />
         </div>
       </div>
     </div>

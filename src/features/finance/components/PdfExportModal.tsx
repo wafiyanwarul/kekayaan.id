@@ -100,9 +100,9 @@ export function PdfExportModal({ transactions, cycle, defaultCycleIndex = 0 }: P
       <button
         type="button"
         onClick={openModal}
-        className="inline-flex items-center gap-2 rounded-lg border border-[#1e2235] px-4 py-2 text-sm font-medium text-slate-300 transition hover:border-indigo-500/40 hover:bg-indigo-500/10 hover:text-white cursor-pointer"
+        className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg border border-indigo-500/30 bg-indigo-500/5 px-2 sm:px-4 py-2 text-xs sm:text-sm font-medium text-indigo-300 transition hover:bg-indigo-500/15 hover:text-indigo-200 active:scale-95 duration-200 cursor-pointer"
       >
-        <Download className="h-4 w-4" />
+        <Download className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" />
         Laporan PDF
       </button>
 
