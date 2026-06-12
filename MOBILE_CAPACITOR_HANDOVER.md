@@ -1,7 +1,7 @@
-# Panduan Handover Ekspansi Seluler & Kebijakan Privasi
+# Rencana Handover Ekspansi Seluler & Kebijakan Privasi
 `kekayaan.id` — Branch: `feat/mobile-capacitor`
 
-Dokumen ini ditujukan untuk mempermudah kelanjutan pengembangan di perangkat/laptop rumah Anda. Seluruh perubahan kode saat ini telah dideploy, dikomit, dan dipush ke branch `feat/mobile-capacitor`.
+Dokumen ini mempermudah kelanjutan pengembangan di perangkat/laptop rumah Anda. Seluruh perubahan kode saat ini telah dideploy, dikomit, dan dipush ke branch `feat/mobile-capacitor`.
 
 ---
 
@@ -38,6 +38,21 @@ Untuk menjalankan emulator/simulator Android:
 2. Pilih **Open an Existing Project** dan arahkan ke folder `/android` di dalam project ini.
 3. Tunggu Gradle sync selesai.
 4. Jalankan aplikasi di emulator atau device Android Anda melalui tombol Run di Android Studio.
+
+---
+
+## 📱 Fitur Native Mobile Terintegrasi Baru
+
+### A. Kontrol Status Bar Native
+- Menggunakan `@capacitor/status-bar` di dalam [MobileNativeProvider.tsx](file:///c:/Users/MGTI251106/Downloads/Wafiy%20Anwarul/Projects/kekayaan.id/src/components/providers/MobileNativeProvider.tsx).
+- Mengubah warna latar belakang Status Bar pada ponsel menjadi gelap sesuai tema aplikasi (`#0f1117`) dan menetapkan ikon/teks menjadi warna terang (`Style.Dark`) agar readable dan premium.
+
+### B. Deep Linking (Pencegahan Masalah Auth Redirect)
+Untuk mengantisipasi masalah redirect login dengan Google, e-mail verification, maupun link reset password di platform WebView mobile:
+- **Intent Filters Android**: Mendaftarkan intent-filter skema URL kustom di [AndroidManifest.xml](file:///c:/Users/MGTI251106/Downloads/Wafiy%20Anwarul/Projects/kekayaan.id/android/app/src/main/AndroidManifest.xml) dengan skema:
+  - `com.kekayaan.app`
+  - `kekayaan`
+- **Listener Deep Link**: Menambahkan event listener `@capacitor/app` pada [MobileNativeProvider.tsx](file:///c:/Users/MGTI251106/Downloads/Wafiy%20Anwarul/Projects/kekayaan.id/src/components/providers/MobileNativeProvider.tsx). Ketika ponsel memicu URL redirect (misal dari e-mail atau proses Google Sign-In), listener ini otomatis mengarahkan user secara mulus ke rute internal aplikasi Next.js (SPA).
 
 ---
 
