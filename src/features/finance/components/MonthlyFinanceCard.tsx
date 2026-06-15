@@ -30,7 +30,7 @@ export function MonthlyFinanceCard({
       <div className="space-y-3">
         <div className="flex justify-between items-center">
           <span className="text-sm text-muted-foreground">Pemasukan</span>
-          <span className="text-sm font-semibold text-emerald-500">
+          <span className="text-sm font-semibold text-emerald-500 whitespace-nowrap">
             +<AnimatedCounter value={totalIncome} formatter={formatCompact} />
           </span>
         </div>
@@ -38,7 +38,7 @@ export function MonthlyFinanceCard({
         <div className="space-y-1">
           <div className="flex justify-between items-center">
             <span className="text-sm text-muted-foreground">Pengeluaran</span>
-            <span className="text-sm font-semibold text-rose-500">
+            <span className="text-sm font-semibold text-rose-500 whitespace-nowrap">
               -<AnimatedCounter value={totalExpense} formatter={formatCompact} />
             </span>
           </div>
@@ -55,7 +55,7 @@ export function MonthlyFinanceCard({
         <div className="border-t border-[#1e2235] pt-3 space-y-2">
           <div className="flex justify-between items-center">
             <span className="text-sm font-medium">Surplus Kas (Likuid)</span>
-            <span className={`text-base font-bold ${surplus >= 0 ? "text-emerald-500" : "text-rose-500"}`}>
+            <span className={`text-base font-bold whitespace-nowrap ${surplus >= 0 ? "text-emerald-500" : "text-rose-500"}`}>
               {surplus >= 0 ? "+" : ""}
               <AnimatedCounter value={surplus} formatter={formatCompact} />
             </span>
@@ -64,7 +64,7 @@ export function MonthlyFinanceCard({
           {totalInvestments > 0 && (
             <div className="flex justify-between items-center text-xs font-bold text-emerald-400 pl-3 border-l-2 border-emerald-500/30 py-0.5">
               <span>Total Ditabung (Surplus + Investasi)</span>
-              <span>
+              <span className="whitespace-nowrap">
                 +<AnimatedCounter value={surplus + totalInvestments} formatter={formatCompact} />
               </span>
             </div>

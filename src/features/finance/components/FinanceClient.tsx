@@ -1047,9 +1047,10 @@ function FinanceStatCard({
   return (
     <div className="rounded-xl border bg-card p-3 sm:p-5">
       <div className="flex items-start justify-between gap-2 sm:gap-3">
-        <div className="min-w-0">
+        <div className="flex-1 min-w-0">
           <p className="text-[10px] sm:text-xs font-semibold uppercase tracking-wide text-muted-foreground truncate leading-tight">{label}</p>
-          <p className="mt-2 text-base sm:text-lg md:text-2xl font-extrabold text-white leading-none">{value}</p>
+          <p className="mt-2 text-base sm:text-lg md:text-2xl font-extrabold text-white leading-none whitespace-nowrap">{value}</p>
+
           <p className="mt-1.5 text-[9px] sm:text-xs text-muted-foreground truncate leading-tight">{sub}</p>
         </div>
         <div

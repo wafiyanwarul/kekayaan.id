@@ -15,9 +15,9 @@ export function StatCard({ label, value, sub, trend, className, icon: Icon }: St
   return (
     <div className={cn("rounded-xl border bg-card p-5", className)}>
       <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0 space-y-1">
+        <div className="flex-1 min-w-0 space-y-1">
           <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{label}</p>
-          <p className="text-2xl font-bold">{value}</p>
+          <p className="text-2xl font-bold whitespace-nowrap">{value}</p>
           {sub && (
             <p className={cn("text-xs font-medium",
               trend === "up" ? "text-emerald-500" :
@@ -28,7 +28,7 @@ export function StatCard({ label, value, sub, trend, className, icon: Icon }: St
         </div>
         {Icon && (
           <div className={cn(
-            "rounded-lg p-2",
+            "rounded-lg p-2 shrink-0",
             trend === "up" ? "bg-emerald-500/15 text-emerald-300" :
             trend === "down" ? "bg-rose-500/15 text-rose-300" :
             "bg-indigo-500/15 text-indigo-300"
@@ -40,3 +40,4 @@ export function StatCard({ label, value, sub, trend, className, icon: Icon }: St
     </div>
   )
 }
+

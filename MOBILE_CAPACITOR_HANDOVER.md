@@ -131,7 +131,7 @@ Sebelum mengunggah berkas `.aab` ke Google Play Console, pastikan Anda telah mem
 ### 3. Kebijakan Privasi Publik (Privacy Policy)
 - Google mewajibkan tautan URL Kebijakan Privasi yang valid untuk aplikasi yang menangani data pengguna.
 - Tautan publik yang telah kita siapkan dan siap diakses langsung di internet:
-  **`https://kekayaan.id/privacy`** (atau sesuaikan dengan domain utama production Vercel Anda).
+  **`https://kekayaan-id.vercel.app/privacy`** (atau sesuaikan dengan domain utama production Vercel Anda).
 - Tempelkan URL tersebut ke kolom **App Content** > **Privacy Policy** di dashboard Google Play Console Anda.
 
 ---
@@ -145,5 +145,4 @@ Agar transisi rute seperti redirect OAuth Google Sign-In, verifikasi e-mail baru
 2. **Perbarui Digital Asset Links**:
    Buka file [public/.well-known/assetlinks.json](file:///c:/Users/MGTI251106/Downloads/Wafiy%20Anwarul/Projects/kekayaan.id/public/.well-known/assetlinks.json) pada codebase ini, lalu gantikan array `sha256_cert_fingerprints` dengan nilai fingerprint SHA-256 yang valid dari langkah di atas.
 3. **Deploy Web Server**:
-   Push perubahan tersebut ke branch utama production agar file `assetlinks.json` dapat diakses secara publik pada path `https://kekayaan.id/.well-known/assetlinks.json` dengan header Content-Type `application/json`.
-
+   Push perubahan tersebut ke branch utama production agar file `assetlinks.json` dapat diakses secara publik pada path `https://kekayaan-id.vercel.app/.well-known/assetlinks.json` dengan header Content-Type `application/json`.

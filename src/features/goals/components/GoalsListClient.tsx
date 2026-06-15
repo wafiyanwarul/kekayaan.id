@@ -201,16 +201,17 @@ export function GoalsListClient({ initialGoals, userId, averageSurplus }: Props)
         ].map(s => {
           const Icon = s.icon
           return (
-            <div key={s.label} className="rounded-xl border border-[#1e2235] bg-[#1a1d2e] p-3 sm:p-4 flex justify-between items-start">
-              <div className="space-y-1">
+            <div key={s.label} className="rounded-xl border border-[#1e2235] bg-[#1a1d2e] p-3 sm:p-4 flex justify-between items-start gap-2">
+              <div className="flex-1 min-w-0 space-y-1">
                 <p className="text-[10px] sm:text-xs text-slate-400 uppercase tracking-wide leading-tight">{s.label}</p>
-                <p className={`text-base sm:text-lg md:text-xl font-extrabold ${s.color}`}>{s.value}</p>
+                <p className={`text-base sm:text-lg md:text-xl font-extrabold ${s.color} whitespace-nowrap`}>{s.value}</p>
                 <p className="text-[9px] sm:text-[10px] text-slate-500 leading-none">{s.sub}</p>
               </div>
-              <div className="p-1.5 sm:p-2 bg-[#0f1117] rounded-lg border border-[#1e2235] text-slate-400 shrink-0 ml-1">
+              <div className="p-1.5 sm:p-2 bg-[#0f1117] rounded-lg border border-[#1e2235] text-slate-400 shrink-0">
                 <Icon className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
               </div>
             </div>
+
           )
         })}
       </div>
