@@ -12,6 +12,23 @@ console.log('--- Starting Mobile Build Script ---');
 let apiMoved = false;
 let authMoved = false;
 
+function renameWithRetry(src, dest, retries = 5, delay = 200) {
+  for (let i = 0; i < retries; i++) {
+    try {
+      fs.renameSync(src, dest);
+      return;
+    } catch (err) {
+      if (err.code === 'EPERM' && i < retries - 1) {
+        console.warn(`Rename EPERM warning, retrying in ${delay}ms... (${i + 1}/${retries})`);
+        const start = Date.now();
+        while (Date.now() - start < delay) {}
+      } else {
+        throw err;
+      }
+    }
+  }
+}
+
 try {
   const nextDir = path.join(__dirname, '../.next');
   if (fs.existsSync(nextDir)) {
@@ -21,13 +38,13 @@ try {
 
   if (fs.existsSync(appApiDir)) {
     console.log('Moving api directory to backup...');
-    fs.renameSync(appApiDir, backupApiDir);
+    renameWithRetry(appApiDir, backupApiDir);
     apiMoved = true;
   }
 
   if (fs.existsSync(appAuthDir)) {
     console.log('Moving auth callback directory to backup...');
-    fs.renameSync(appAuthDir, backupAuthDir);
+    renameWithRetry(appAuthDir, backupAuthDir);
     authMoved = true;
   }
 
@@ -41,7 +58,7 @@ try {
   if (apiMoved) {
     console.log('Restoring api directory from backup...');
     try {
-      fs.renameSync(backupApiDir, appApiDir);
+      renameWithRetry(backupApiDir, appApiDir);
       console.log('API directory restored successfully.');
     } catch (restoreError) {
       console.error('CRITICAL: Failed to restore API directory:', restoreError);
@@ -51,7 +68,7 @@ try {
   if (authMoved) {
     console.log('Restoring auth callback directory from backup...');
     try {
-      fs.renameSync(backupAuthDir, appAuthDir);
+      renameWithRetry(backupAuthDir, appAuthDir);
       console.log('Auth directory restored successfully.');
     } catch (restoreError) {
       console.error('CRITICAL: Failed to restore Auth directory:', restoreError);

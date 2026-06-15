@@ -433,7 +433,7 @@ export function FinanceClient({ cycle, initialCategories, initialTransactions, u
             className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg bg-indigo-600 px-2 sm:px-4 py-2 text-xs sm:text-sm font-semibold text-white transition hover:bg-indigo-500 shadow-lg shadow-indigo-500/20 active:scale-95 duration-200 cursor-pointer"
           >
             <Plus className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" />
-            + Transaksi
+            Transaksi
           </button>
         </div>
       </div>

@@ -197,17 +197,17 @@ export default function LoginPage() {
         {/* Form Section */}
         <div className="my-auto py-3 flex flex-col justify-center max-w-sm mx-auto w-full">
           {/* Logo Centered */}
-          <div className="flex flex-col items-center justify-center text-center gap-2 mb-6">
-            <div className="relative flex items-center justify-center w-14 h-14 rounded-2xl bg-indigo-500/10 border border-indigo-500/25 shadow-lg animate-pulse-glow">
+          <div className="flex flex-col items-center justify-center text-center gap-2 mb-12">
+            <div className="relative flex items-center justify-center w-11 h-11 rounded-xl bg-indigo-500/10 border border-indigo-500/20 shadow-md animate-pulse-glow">
               <Image
                 src="/android-chrome-192x192.png"
                 alt="kekayaan.id logo"
-                width={36}
-                height={36}
-                className="rounded-xl animate-float"
+                width={26}
+                height={26}
+                className="rounded-lg animate-float"
               />
             </div>
-            <span className="text-xl font-extrabold text-white tracking-widest mt-1">kekayaan.id</span>
+            <span className="text-base font-semibold text-white tracking-wider mt-1">kekayaan.id</span>
           </div>
 
           <div className="space-y-1 mb-4 lg:mb-6">
