@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useMemo, useState, useEffect } from "react"
 import {
   ArrowDownLeft,
   ArrowUpRight,
@@ -108,6 +108,32 @@ export function FinanceClient({ cycle, initialCategories, initialTransactions, u
   const [showCycleDropdown, setShowCycleDropdown] = useState(false)
   const [dropdownYear, setDropdownYear] = useState<number>(() => new Date().getFullYear())
   const [showMutasiModal, setShowMutasiModal] = useState(false)
+  const [remainingQuota, setRemainingQuota] = useState<number | null>(null)
+
+  useEffect(() => {
+    async function fetchQuota() {
+      try {
+        const supabase = createClient()
+        const today = new Date()
+        today.setHours(0, 0, 0, 0)
+        const todayISO = today.toISOString()
+
+        const { count, error } = await supabase
+          .from("mutasi_usage")
+          .select("*", { count: "exact", head: true })
+          .eq("user_id", userId)
+          .gte("used_at", todayISO)
+
+        if (!error) {
+          const used = count ?? 0
+          setRemainingQuota(Math.max(0, 3 - used))
+        }
+      } catch (err) {
+        console.error("Failed to fetch mutasi quota:", err)
+      }
+    }
+    fetchQuota()
+  }, [userId])
 
   const availableCycles = useMemo(() => getAvailableCycles(transactions, cycle), [transactions, cycle])
   const selectedCycle = availableCycles[selectedCycleIndex] ?? availableCycles[0]
@@ -521,7 +547,25 @@ export function FinanceClient({ cycle, initialCategories, initialTransactions, u
               </div>
               <h3 className="text-sm font-bold uppercase tracking-wider finance-mutasi-title">Ekstraksi Mutasi</h3>
             </div>
-            <span className="rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide finance-mutasi-badge">Aktif</span>
+            {remainingQuota !== null ? (
+              <span
+                className={cn(
+                  "rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide",
+                  remainingQuota === 3 && "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20",
+                  remainingQuota === 2 && "bg-indigo-500/10 text-indigo-400 border border-indigo-500/20",
+                  remainingQuota === 1 && "bg-amber-500/10 text-amber-400 border border-amber-500/20 animate-pulse",
+                  remainingQuota === 0 && "bg-rose-500/10 text-rose-400 border border-rose-500/20"
+                )}
+              >
+                {remainingQuota === 0
+                  ? "Kuota: 0/3 (Habis)"
+                  : remainingQuota === 1
+                  ? "Kuota: 1/3 (Sisa 1)"
+                  : `Kuota: ${remainingQuota}/3`}
+              </span>
+            ) : (
+              <span className="rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide finance-mutasi-badge">Aktif</span>
+            )}
           </div>
           <p className="text-[13px] finance-mutasi-subtitle mb-4">Import otomatis dari PDF mutasi rekening bank</p>
           <div className="mb-4 flex flex-wrap gap-1.5">
@@ -531,6 +575,13 @@ export function FinanceClient({ cycle, initialCategories, initialTransactions, u
           <div className="mb-3 rounded-lg border px-3 py-2 finance-mutasi-security">
             <p className="text-[11px] finance-mutasi-security-text">🔒 File tidak disimpan — diproses di memory server saja</p>
           </div>
+          {remainingQuota === 0 && (
+            <div className="mb-3 rounded-lg border border-rose-500/20 bg-rose-500/5 px-3 py-2">
+              <p className="text-[10.5px] leading-relaxed text-rose-400">
+                ⚠️ Batas ekstraksi harian telah tercapai. Kuota Anda akan di-reset besok.
+              </p>
+            </div>
+          )}
           <button
             type="button"
             onClick={() => setShowMutasiModal(true)}
@@ -706,6 +757,7 @@ export function FinanceClient({ cycle, initialCategories, initialTransactions, u
           onClose={() => setShowMutasiModal(false)}
           onImported={(newTransactions) => {
             setTransactions((current) => sortTransactions([...newTransactions, ...current]))
+            setRemainingQuota((prev) => (prev !== null ? Math.max(0, prev - 1) : null))
             setShowMutasiModal(false)
           }}
         />
