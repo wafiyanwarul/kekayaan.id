@@ -44,7 +44,9 @@ export function StyledSelect({
   maxHeight = 220,
 }: Props) {
   const [open, setOpen] = useState(false)
+  const [searchQuery, setSearchQuery] = useState("")
   const containerRef = useRef<HTMLDivElement>(null)
+  const searchInputRef = useRef<HTMLInputElement>(null)
 
   // Flatten all options for label lookup
   const allOptions: SelectOption[] = groups
@@ -56,6 +58,25 @@ export function StyledSelect({
 
   const hasValue = Boolean(value)
 
+  // Filter options and groups based on search query
+  const query = searchQuery.trim().toLowerCase()
+  const filteredOptions = options
+    ? options.filter((o) => o.label.toLowerCase().includes(query))
+    : undefined
+
+  const filteredGroups = groups
+    ? groups
+        .map((g) => ({
+          ...g,
+          options: g.options.filter((o) => o.label.toLowerCase().includes(query)),
+        }))
+        .filter((g) => g.options.length > 0)
+    : undefined
+
+  const hasAnyMatches =
+    (filteredOptions && filteredOptions.length > 0) ||
+    (filteredGroups && filteredGroups.length > 0)
+
   // Close on outside click / Escape
   const handleOutside = useCallback((e: MouseEvent) => {
     if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
@@ -64,8 +85,19 @@ export function StyledSelect({
   }, [])
 
   useEffect(() => {
-    if (open) document.addEventListener("mousedown", handleOutside)
-    return () => document.removeEventListener("mousedown", handleOutside)
+    if (open) {
+      document.addEventListener("mousedown", handleOutside)
+      // Auto-focus search input when opening
+      const timer = setTimeout(() => {
+        searchInputRef.current?.focus()
+      }, 50)
+      return () => {
+        document.removeEventListener("mousedown", handleOutside)
+        clearTimeout(timer)
+      }
+    } else {
+      setSearchQuery("")
+    }
   }, [open, handleOutside])
 
   useEffect(() => {
@@ -79,6 +111,22 @@ export function StyledSelect({
   function select(val: string) {
     onChange(val)
     setOpen(false)
+  }
+
+  function handleInputKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (e.key === "Enter") {
+      e.preventDefault()
+      if (hasAnyMatches) {
+        if (filteredOptions && filteredOptions.length > 0) {
+          select(filteredOptions[0].value)
+        } else if (filteredGroups && filteredGroups.length > 0) {
+          select(filteredGroups[0].options[0].value)
+        }
+      }
+    }
+    if (e.key === " ") {
+      e.stopPropagation()
+    }
   }
 
   // Hidden input for form required validation
@@ -116,8 +164,28 @@ export function StyledSelect({
           className="absolute left-0 top-[calc(100%+4px)] z-[70] w-full rounded-xl border border-[#2a2f45] bg-[#12151f] py-1 shadow-2xl shadow-black/60 overflow-y-auto"
           style={{ maxHeight }}
         >
+          {/* Search bar */}
+          <div className="sticky top-0 z-10 px-2 py-1.5 bg-[#12151f] border-b border-[#2a2f45]/70 mb-1">
+            <input
+              ref={searchInputRef}
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyDown={handleInputKeyDown}
+              placeholder="Ketik untuk mencari..."
+              className="w-full rounded-md border border-[#2a2f45] bg-[#0f1117] px-2.5 py-1.5 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+            />
+          </div>
+
+          {/* No matches */}
+          {!hasAnyMatches && (
+            <div className="px-3 py-3 text-center text-xs text-slate-500 italic">
+              Hasil tidak ditemukan
+            </div>
+          )}
+
           {/* Flat options */}
-          {options?.map((opt) => (
+          {filteredOptions?.map((opt) => (
             <OptionItem
               key={opt.value}
               option={opt}
@@ -127,7 +195,7 @@ export function StyledSelect({
           ))}
 
           {/* Grouped options */}
-          {groups?.map((group, gi) => (
+          {filteredGroups?.map((group, gi) => (
             <div key={gi}>
               <div className="px-3 pt-2 pb-1">
                 <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">

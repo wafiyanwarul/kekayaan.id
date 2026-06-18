@@ -1,10 +1,11 @@
 "use client"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import Image from "next/image"
-import { Eye, EyeOff } from "lucide-react"
+import { Eye, EyeOff, Loader2 } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
+import { OnboardingSlides } from "@/components/auth/OnboardingSlides"
 
 /* ─────────────────── Inline SVG Illustration ─────────────────── */
 function HeroIllustration() {
@@ -94,6 +95,24 @@ export default function LoginPage() {
   const [rememberMe, setRememberMe] = useState(false)
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
+  const [showOnboarding, setShowOnboarding] = useState<boolean | null>(null)
+
+  useEffect(() => {
+    const completed = localStorage.getItem("kekayaan-id-onboarding-completed")
+    setShowOnboarding(completed !== "true")
+  }, [])
+
+  if (showOnboarding === null) {
+    return (
+      <div className="min-h-screen bg-[#0f1117] flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-indigo-500" />
+      </div>
+    )
+  }
+
+  if (showOnboarding) {
+    return <OnboardingSlides onComplete={() => setShowOnboarding(false)} />
+  }
 
   function getLoginErrorMessage(errorMsg: string): string {
     const msg = errorMsg.toLowerCase()
@@ -175,20 +194,22 @@ export default function LoginPage() {
       {/* ── Left Column: Form ── */}
       <div className="w-full lg:w-[480px] xl:w-[520px] flex flex-col justify-between px-6 sm:px-10 lg:px-14 py-5 lg:py-6 bg-[#0f1117] relative z-10 min-h-screen overflow-y-auto">
 
-        {/* Logo */}
-        <div className="flex items-center gap-3 max-w-sm mx-auto w-full">
-          <Image
-            src="/android-chrome-192x192.png"
-            alt="kekayaan.id logo"
-            width={36}
-            height={36}
-            className="rounded-lg"
-          />
-          <span className="text-lg font-bold text-white tracking-tight">kekayaan.id</span>
-        </div>
-
         {/* Form Section */}
         <div className="my-auto py-3 flex flex-col justify-center max-w-sm mx-auto w-full">
+          {/* Logo Centered */}
+          <div className="flex flex-col items-center justify-center text-center gap-2 mb-12">
+            <div className="relative flex items-center justify-center w-11 h-11 rounded-xl bg-indigo-500/10 border border-indigo-500/20 shadow-md animate-pulse-glow">
+              <Image
+                src="/android-chrome-192x192.png"
+                alt="kekayaan.id logo"
+                width={26}
+                height={26}
+                className="rounded-lg animate-float"
+              />
+            </div>
+            <span className="text-base font-semibold text-white tracking-wider mt-1">kekayaan.id</span>
+          </div>
+
           <div className="space-y-1 mb-4 lg:mb-6">
             <h1 className="text-xl lg:text-2xl font-bold text-white tracking-tight">Masuk ke akun kamu</h1>
             <p className="text-xs lg:text-sm text-slate-400">Pantau kekayaan & raih tujuan finansialmu.</p>

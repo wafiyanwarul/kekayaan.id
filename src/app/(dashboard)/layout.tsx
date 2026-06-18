@@ -3,8 +3,33 @@ import { TopBar } from "@/components/layout/TopBar"
 import { SidebarProvider } from "@/components/providers/SidebarProvider"
 import { createClient } from "@/lib/server"
 import { MaintenanceListener } from "@/components/settings/MaintenanceListener"
+import { BottomNav } from "@/components/layout/BottomNav"
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
+  if (process.env.EXPORT_MOBILE === "true") {
+    return (
+      <SidebarProvider>
+        <div className="flex h-screen bg-background overflow-hidden">
+          {/* Desktop sidebar */}
+          <SidebarNav />
+
+          {/* Mobile drawer + backdrop */}
+          <MobileSidebarDrawer />
+
+          {/* Main content area — expands when sidebar is collapsed */}
+          <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
+            <MaintenanceListener userId={null} />
+            <TopBar />
+            <main className="flex-1 overflow-y-auto p-4 md:p-6 pb-24 md:pb-6">
+              {children}
+            </main>
+            <BottomNav />
+          </div>
+        </div>
+      </SidebarProvider>
+    )
+  }
+
   const supabase = await createClient()
   const {
     data: { user },
@@ -23,9 +48,10 @@ export default async function DashboardLayout({ children }: { children: React.Re
         <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
           <MaintenanceListener userId={user?.id || null} />
           <TopBar />
-          <main className="flex-1 overflow-y-auto p-4 md:p-6">
+          <main className="flex-1 overflow-y-auto p-4 md:p-6 pb-24 md:pb-6">
             {children}
           </main>
+          <BottomNav />
         </div>
       </div>
     </SidebarProvider>

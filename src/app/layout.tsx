@@ -1,5 +1,6 @@
 import type { Metadata } from "next"
 import { AppPreferencesProvider } from "@/components/providers/AppPreferencesProvider"
+import { MobileNativeProvider } from "@/components/providers/MobileNativeProvider"
 import "./globals.css"
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://kekayaan-id.vercel.app"
@@ -69,7 +70,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="id" suppressHydrationWarning>
       <body>
-        <AppPreferencesProvider>{children}</AppPreferencesProvider>
+        <AppPreferencesProvider>
+          <MobileNativeProvider>{children}</MobileNativeProvider>
+        </AppPreferencesProvider>
       </body>
     </html>
   )

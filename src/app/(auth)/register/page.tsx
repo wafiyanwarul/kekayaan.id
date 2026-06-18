@@ -1,10 +1,11 @@
 "use client"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import Image from "next/image"
-import { Eye, EyeOff } from "lucide-react"
+import { Eye, EyeOff, Loader2, ShieldCheck, AlertTriangle, X } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
+import { OnboardingSlides } from "@/components/auth/OnboardingSlides"
 
 /* ─────────────────── Inline SVG Illustration ─────────────────── */
 function HeroIllustration() {
@@ -106,6 +107,25 @@ export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
+  const [showOnboarding, setShowOnboarding] = useState<boolean | null>(null)
+  const [showPrivacyModal, setShowPrivacyModal] = useState(false)
+
+  useEffect(() => {
+    const completed = localStorage.getItem("kekayaan-id-onboarding-completed")
+    setShowOnboarding(completed !== "true")
+  }, [])
+
+  if (showOnboarding === null) {
+    return (
+      <div className="min-h-screen bg-[#0f1117] flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-indigo-500" />
+      </div>
+    )
+  }
+
+  if (showOnboarding) {
+    return <OnboardingSlides onComplete={() => setShowOnboarding(false)} />
+  }
 
   async function handleRegister(e: React.FormEvent) {
     e.preventDefault()
@@ -155,20 +175,22 @@ export default function RegisterPage() {
       {/* ── Left Column: Form ── */}
       <div className="w-full lg:w-[480px] xl:w-[520px] flex flex-col justify-between px-6 sm:px-10 lg:px-14 py-5 lg:py-6 bg-[#0f1117] relative z-10 min-h-screen overflow-y-auto">
 
-        {/* Logo */}
-        <div className="flex items-center gap-3 max-w-sm mx-auto w-full">
-          <Image
-            src="/android-chrome-192x192.png"
-            alt="kekayaan.id logo"
-            width={36}
-            height={36}
-            className="rounded-lg"
-          />
-          <span className="text-lg font-bold text-white tracking-tight">kekayaan.id</span>
-        </div>
-
         {/* Form Section */}
         <div className="my-auto py-3 flex flex-col justify-center max-w-sm mx-auto w-full">
+          {/* Logo Centered */}
+          <div className="flex flex-col items-center justify-center text-center gap-2 mb-12">
+            <div className="relative flex items-center justify-center w-11 h-11 rounded-xl bg-indigo-500/10 border border-indigo-500/20 shadow-md animate-pulse-glow">
+              <Image
+                src="/android-chrome-192x192.png"
+                alt="kekayaan.id logo"
+                width={26}
+                height={26}
+                className="rounded-lg animate-float"
+              />
+            </div>
+            <span className="text-base font-semibold text-white tracking-wider mt-1">kekayaan.id</span>
+          </div>
+
           <div className="space-y-1 mb-4 lg:mb-6">
             <h1 className="text-xl lg:text-2xl font-bold text-white tracking-tight">Buat akun baru</h1>
             <p className="text-xs lg:text-sm text-slate-400">Mulai kelola dan pantau kekayaanmu sekarang.</p>
@@ -213,6 +235,27 @@ export default function RegisterPage() {
                 </button>
               </div>
               <p className="text-[10px] text-slate-500 leading-tight">Minimal 8 karakter, kombinasi huruf besar, kecil, angka & simbol</p>
+            </div>
+
+            {/* Privacy Agreement Checkbox */}
+            <div className="flex items-start gap-2.5 px-1">
+              <input
+                id="agree-privacy"
+                type="checkbox"
+                required
+                className="mt-1 h-4 w-4 shrink-0 rounded border-[#1e2440] bg-[#151829] text-indigo-600 focus:ring-indigo-500/70"
+              />
+              <label htmlFor="agree-privacy" className="text-[11px] leading-snug text-slate-400 select-none">
+                Saya menyetujui{" "}
+                <button
+                  type="button"
+                  onClick={() => setShowPrivacyModal(true)}
+                  className="text-indigo-400 font-semibold hover:underline bg-transparent border-none p-0 cursor-pointer inline"
+                >
+                  Kebijakan Privasi & Manajemen Data
+                </button>{" "}
+                kekayaan.id, termasuk kepatuhan penggunaan yang sah dan aman.
+              </label>
             </div>
 
             {/* Error */}
@@ -335,6 +378,82 @@ export default function RegisterPage() {
           </div>
         </div>
       </div>
+      {/* Privacy Policy Modal */}
+      {showPrivacyModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-md">
+          <div className="w-full max-w-xl rounded-2xl border border-indigo-500/25 bg-[#0f1117] p-6 shadow-2xl animate-scale-in max-h-[80vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b border-[#1e2440] pb-4 mb-4">
+              <div className="flex items-center gap-2">
+                <ShieldCheck className="h-6 w-6 text-indigo-400" />
+                <h3 className="text-lg font-bold text-white">Kebijakan Privasi & Manajemen Data</h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowPrivacyModal(false)}
+                className="text-slate-400 hover:text-white transition cursor-pointer"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="space-y-4 text-xs lg:text-sm text-slate-300 leading-relaxed pr-2">
+              <section>
+                <h4 className="font-bold text-white text-sm lg:text-base mb-1">1. Manajemen & Penggunaan Data</h4>
+                <p>
+                  Seluruh data keuangan, transaksi, aset, dan sasaran (goals) yang Anda masukkan disimpan secara aman menggunakan database PostgreSQL pihak ketiga yang dihosting di <strong>Supabase</strong>.
+                </p>
+                <p className="mt-1">
+                  Kami menerapkan kebijakan <strong>Row Level Security (RLS)</strong> yang ketat pada database, memastikan bahwa setiap data hanya dapat diakses oleh pemilik sah data tersebut yang diautentikasi lewat token JWT dinamis.
+                </p>
+              </section>
+
+              <section>
+                <h4 className="font-bold text-white text-sm lg:text-base mb-1">2. Protokol Keamanan & Privasi</h4>
+                <p>
+                  Aplikasi kekayaan.id menggunakan enkripsi SSL/TLS tingkat tinggi untuk seluruh lalu lintas data antara perangkat Anda dan server. Data sensitif seperti kata sandi dienkripsi menggunakan hashing kriptografi satu arah yang kuat.
+                </p>
+                <p className="mt-1">
+                  Kami <strong>tidak pernah menjual, membagikan, atau menyalahgunakan</strong> informasi finansial Anda kepada pihak ketiga manapun untuk kebutuhan pemasaran, iklan, atau pelacakan profil komersial lainnya.
+                </p>
+              </section>
+
+              <section className="p-3.5 rounded-xl bg-red-500/5 border border-red-500/15">
+                <div className="flex items-start gap-2.5">
+                  <AlertTriangle className="h-4.5 w-4.5 text-red-400 shrink-0 mt-0.5" />
+                  <div>
+                    <h4 className="font-bold text-red-200 text-xs lg:text-sm mb-1">3. Larangan Penyalahgunaan & Kepatuhan Hukum</h4>
+                    <p className="text-[11px] lg:text-xs text-red-300/90">
+                      Penggunaan aplikasi kekayaan.id beserta seluruh fiturnya <strong>hanya ditujukan untuk pencatatan dan pengelolaan keuangan pribadi secara legal</strong>.
+                    </p>
+                    <ul className="mt-2 space-y-1 list-disc list-inside text-[10px] lg:text-xs text-red-300/80">
+                      <li>Dilarang keras memanipulasi berkas mutasi bank atau dokumen eksternal untuk tujuan pemalsuan, penipuan, atau pencucian uang (money laundering).</li>
+                      <li>Dilarang menggunakan aplikasi untuk aktivitas yang mendukung tindakan kriminal, pendanaan terorisme, penghindaran pajak ilegal, atau kejahatan siber.</li>
+                      <li>Platform berhak menonaktifkan akun secara permanen jika ditemukan indikasi kuat pelanggaran hukum atau penyalahgunaan fitur sistem.</li>
+                    </ul>
+                  </div>
+                </div>
+              </section>
+
+              <section>
+                <h4 className="font-bold text-white text-sm lg:text-base mb-1">4. Keamanan Integrasi AI (Ekstraktor PDF)</h4>
+                <p>
+                  Saat mengunggah berkas mutasi rekening bank untuk diekstrak, dokumen diproses secara langsung melalui REST API yang aman. Kami tidak menyimpan salinan berkas mutasi bank fisik Anda di penyimpanan cloud permanen setelah ekstraksi selesai dilakukan.
+                </p>
+              </section>
+            </div>
+
+            <div className="mt-6 pt-4 border-t border-[#1e2440] flex justify-end">
+              <button
+                type="button"
+                onClick={() => setShowPrivacyModal(false)}
+                className="rounded-lg bg-indigo-600 hover:bg-indigo-500 transition px-5 py-2 text-xs lg:text-sm font-semibold text-white cursor-pointer"
+              >
+                Saya Mengerti
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
