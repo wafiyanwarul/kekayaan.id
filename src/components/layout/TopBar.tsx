@@ -84,8 +84,9 @@ export function TopBar() {
           type="button"
           onClick={handleLogout}
           disabled={loggingOut}
-          className="inline-flex h-9 items-center gap-2 rounded-lg border border-red-500/20 px-3 text-xs font-semibold text-red-300 transition hover:bg-red-500/15 hover:text-red-100 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+          className="inline-flex h-9 items-center gap-2 rounded-lg border border-red-500/30 dark:border-red-500/20 px-3 text-xs font-semibold text-red-600 dark:text-red-300 transition hover:bg-red-500/10 dark:hover:bg-red-500/15 hover:text-red-700 dark:hover:text-red-100 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
         >
+
           <LogOut className="h-4 w-4" />
           <span className="hidden sm:inline">{loggingOut ? "..." : t("topbar.logout")}</span>
         </button>
