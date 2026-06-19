@@ -475,31 +475,31 @@ export function FinanceClient({ cycle, initialCategories, initialTransactions, u
         const liquid = trueSurplus - dailyAvgStats.investasi
         return (
           <div className="grid gap-3 sm:grid-cols-3">
-            {/* Surplus — Deep Teal: confident, premium, not "AI" */}
-            <div className="rounded-xl border border-teal-500/30 dark:border-teal-500/20 bg-teal-500/10 dark:bg-teal-500/5 p-4">
-              <p className="text-[11px] font-semibold uppercase tracking-wider text-teal-600 dark:text-teal-400">Surplus (sebelum invest)</p>
-              <p className="mt-1 text-2xl font-extrabold text-teal-700 dark:text-teal-300 whitespace-nowrap">
+            {/* Surplus — Teal: bright & visible in dark mode */}
+            <div className="rounded-xl border border-teal-400/60 dark:border-teal-400/50 bg-teal-500/20 dark:bg-teal-400/15 p-4 shadow-sm dark:shadow-teal-500/10">
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-teal-600 dark:text-teal-300">Surplus (sebelum invest)</p>
+              <p className="mt-1 text-2xl font-extrabold text-teal-700 dark:text-teal-200 whitespace-nowrap">
                 <AnimatedCounter value={trueSurplus} formatter="compact" />
               </p>
-              <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Pemasukan − pengeluaran riil</p>
+              <p className="mt-1 text-xs text-teal-600/70 dark:text-teal-400/80">Pemasukan − pengeluaran riil</p>
             </div>
-            {/* Investasi — Deep Rose-Crimson: bold, high-stakes, premium */}
-            <div className="rounded-xl border border-rose-600/30 dark:border-rose-500/20 bg-rose-600/10 dark:bg-rose-500/5 p-4">
-              <p className="text-[11px] font-semibold uppercase tracking-wider text-rose-700 dark:text-rose-400">Dialokasikan ke Investasi</p>
-              <p className="mt-1 text-2xl font-extrabold text-rose-800 dark:text-rose-300 whitespace-nowrap">
+            {/* Investasi — Rose-Crimson: bold & bright */}
+            <div className="rounded-xl border border-rose-500/60 dark:border-rose-400/50 bg-rose-500/20 dark:bg-rose-400/15 p-4 shadow-sm dark:shadow-rose-500/10">
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-rose-600 dark:text-rose-300">Dialokasikan ke Investasi</p>
+              <p className="mt-1 text-2xl font-extrabold text-rose-700 dark:text-rose-200 whitespace-nowrap">
                 <AnimatedCounter value={dailyAvgStats.investasi} formatter="compact" />
               </p>
-              <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+              <p className="mt-1 text-xs text-rose-600/70 dark:text-rose-400/80">
                 {activeSummary.income > 0 ? ((dailyAvgStats.investasi / activeSummary.income) * 100).toFixed(1) : 0}% dari pemasukan
               </p>
             </div>
-            {/* Kas Likuid — Cyan: crisp, futuristic, liquid/flow */}
-            <div className="rounded-xl border border-cyan-500/30 dark:border-cyan-500/20 bg-cyan-500/10 dark:bg-cyan-500/5 p-4">
-              <p className="text-[11px] font-semibold uppercase tracking-wider text-cyan-700 dark:text-cyan-400">Kas Likuid (di tangan)</p>
-              <p className={`mt-1 text-2xl font-extrabold whitespace-nowrap ${liquid >= 0 ? "text-cyan-800 dark:text-cyan-300" : "text-rose-700 dark:text-rose-400"}`}>
+            {/* Kas Likuid — Cyan: bright & crisp */}
+            <div className="rounded-xl border border-cyan-400/60 dark:border-cyan-400/50 bg-cyan-500/20 dark:bg-cyan-400/15 p-4 shadow-sm dark:shadow-cyan-500/10">
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-cyan-700 dark:text-cyan-300">Kas Likuid (di tangan)</p>
+              <p className={`mt-1 text-2xl font-extrabold whitespace-nowrap ${liquid >= 0 ? "text-cyan-700 dark:text-cyan-200" : "text-rose-600 dark:text-rose-300"}`}>
                 <AnimatedCounter value={liquid} formatter="compact" />
               </p>
-              <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Surplus − investasi</p>
+              <p className="mt-1 text-xs text-cyan-600/70 dark:text-cyan-400/80">Surplus − investasi</p>
             </div>
           </div>
 
