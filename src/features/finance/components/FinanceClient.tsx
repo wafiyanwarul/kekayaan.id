@@ -475,30 +475,31 @@ export function FinanceClient({ cycle, initialCategories, initialTransactions, u
         const liquid = trueSurplus - dailyAvgStats.investasi
         return (
           <div className="grid gap-3 sm:grid-cols-3">
-            <div className="rounded-xl border border-indigo-500/20 bg-indigo-500/5 p-4">
-              <p className="text-[11px] font-semibold uppercase tracking-wider text-indigo-400">Surplus (sebelum invest)</p>
-              <p className="mt-1 text-2xl font-extrabold text-indigo-300">
+            <div className="rounded-xl border border-indigo-500/30 dark:border-indigo-500/20 bg-indigo-500/10 dark:bg-indigo-500/5 p-4">
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">Surplus (sebelum invest)</p>
+              <p className="mt-1 text-2xl font-extrabold text-indigo-700 dark:text-indigo-300 whitespace-nowrap">
                 <AnimatedCounter value={trueSurplus} formatter="compact" />
               </p>
-              <p className="mt-1 text-xs text-slate-400">Pemasukan − pengeluaran riil</p>
+              <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Pemasukan − pengeluaran riil</p>
             </div>
-            <div className="rounded-xl border border-purple-500/20 bg-purple-500/5 p-4">
-              <p className="text-[11px] font-semibold uppercase tracking-wider text-purple-400">Dialokasikan ke Investasi</p>
-              <p className="mt-1 text-2xl font-extrabold text-purple-300">
+            <div className="rounded-xl border border-purple-500/30 dark:border-purple-500/20 bg-purple-500/10 dark:bg-purple-500/5 p-4">
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-purple-600 dark:text-purple-400">Dialokasikan ke Investasi</p>
+              <p className="mt-1 text-2xl font-extrabold text-purple-700 dark:text-purple-300 whitespace-nowrap">
                 <AnimatedCounter value={dailyAvgStats.investasi} formatter="compact" />
               </p>
-              <p className="mt-1 text-xs text-slate-400">
+              <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
                 {activeSummary.income > 0 ? ((dailyAvgStats.investasi / activeSummary.income) * 100).toFixed(1) : 0}% dari pemasukan
               </p>
             </div>
-            <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-4">
-              <p className="text-[11px] font-semibold uppercase tracking-wider text-emerald-400">Kas Likuid (di tangan)</p>
-              <p className={`mt-1 text-2xl font-extrabold ${liquid >= 0 ? "text-emerald-300" : "text-rose-400"}`}>
+            <div className="rounded-xl border border-emerald-500/30 dark:border-emerald-500/20 bg-emerald-500/10 dark:bg-emerald-500/5 p-4">
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">Kas Likuid (di tangan)</p>
+              <p className={`mt-1 text-2xl font-extrabold whitespace-nowrap ${liquid >= 0 ? "text-emerald-800 dark:text-emerald-300" : "text-rose-700 dark:text-rose-400"}`}>
                 <AnimatedCounter value={liquid} formatter="compact" />
               </p>
-              <p className="mt-1 text-xs text-slate-400">Surplus − investasi</p>
+              <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Surplus − investasi</p>
             </div>
           </div>
+
         )
       })()}
 
@@ -1007,20 +1008,28 @@ function CategoryShareChart({
               </PieChart>
             </ResponsiveContainer>
           </div>
-          <div className="space-y-2 self-center">
+          <div
+            className={cn(
+              "self-center w-full",
+              data.length > 5
+                ? "grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2 gap-2"
+                : "space-y-2"
+            )}
+          >
             {data.map((item, index) => (
-              <div key={item.name} className="flex items-center justify-between gap-3 rounded-lg px-3 py-2 finance-category-row">
+              <div key={item.name} className="flex items-center justify-between gap-2.5 rounded-lg px-2.5 py-1.5 finance-category-row">
                 <div className="flex min-w-0 items-center gap-2">
                   <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: CATEGORY_COLORS[index % CATEGORY_COLORS.length] }} />
-                  <span className="truncate text-sm font-medium finance-category-name">{item.name}</span>
+                  <span className="truncate text-xs sm:text-sm font-medium finance-category-name">{item.name}</span>
                 </div>
-                <div className="text-right">
-                  <p className={cn("text-sm font-bold", tone === "income" ? "finance-category-perc-inc" : "finance-category-perc-exp")}>{item.percentage.toFixed(1)}%</p>
-                  <p className="text-xs finance-category-amount">{formatCompact(item.amount)}</p>
+                <div className="text-right shrink-0">
+                  <p className={cn("text-xs sm:text-sm font-bold whitespace-nowrap", tone === "income" ? "finance-category-perc-inc" : "finance-category-perc-exp")}>{item.percentage.toFixed(1)}%</p>
+                  <p className="text-[10px] sm:text-xs finance-category-amount whitespace-nowrap">{formatCompact(item.amount)}</p>
                 </div>
               </div>
             ))}
           </div>
+
         </div>
       ) : (
         <div className="flex h-[210px] items-center justify-center rounded-lg border border-dashed border-[#1e2235] text-sm text-muted-foreground">
