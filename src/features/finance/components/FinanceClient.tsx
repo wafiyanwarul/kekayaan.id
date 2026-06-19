@@ -823,12 +823,12 @@ function DailyEssentialCard({
   const items = [
     {
       avg: avgMakanan,
-      // Fuchsia: high-fashion, luxe, premium — not amber/yellow
-      borderColor: "border-fuchsia-500/30",
-      color: "bg-fuchsia-500",
-      colorBg: "bg-fuchsia-500/10",
-      colorText: "text-fuchsia-400",
-      colorTextMuted: "text-fuchsia-500/70",
+      // Orange: warm, food/energy-like, travel-inspired coral — not AI
+      borderColor: "border-orange-500/40",
+      color: "bg-orange-500",
+      colorBg: "bg-orange-500/15",
+      colorText: "text-orange-400",
+      colorTextMuted: "text-orange-500/70",
       emoji: "🍽️",
       label: "Makanan",
       pct: makananPct,
@@ -837,12 +837,12 @@ function DailyEssentialCard({
     },
     {
       avg: avgTransportasi,
-      // Teal: modern, futuristic motion/flow — not sky blue
-      borderColor: "border-teal-500/30",
-      color: "bg-teal-500",
-      colorBg: "bg-teal-500/10",
-      colorText: "text-teal-400",
-      colorTextMuted: "text-teal-500/70",
+      // Sky blue: premium travel/motion inspired — not flat corporate blue
+      borderColor: "border-sky-400/40",
+      color: "bg-sky-500",
+      colorBg: "bg-sky-500/15",
+      colorText: "text-sky-400",
+      colorTextMuted: "text-sky-500/70",
       emoji: "🚌",
       label: "Transportasi",
       pct: transportasiPct,
@@ -874,11 +874,11 @@ function DailyEssentialCard({
           {/* Segmented progress bar */}
           <div className="mb-1 flex h-3 overflow-hidden rounded-full bg-[#0f1117]">
             <div
-              className="h-full bg-fuchsia-500 transition-all duration-500"
+              className="h-full bg-orange-500 transition-all duration-500"
               style={{ width: `${makananPct}%` }}
             />
             <div
-              className="h-full bg-teal-500 transition-all duration-500"
+              className="h-full bg-sky-500 transition-all duration-500"
               style={{ width: `${transportasiPct}%` }}
             />
           </div>
@@ -941,12 +941,12 @@ function DailyEssentialCard({
             </div>
 
             {highestMakananDay && (
-              <div className="rounded-xl border border-pink-600/20 bg-pink-600/5 px-4 py-3">
+              <div className="rounded-xl border border-orange-500/30 bg-orange-500/10 px-4 py-3">
                 <div className="flex items-center gap-1.5 mb-1">
-                  <span className="text-xs font-semibold uppercase tracking-wide text-pink-500">Hari Makan Tertinggi</span>
-                  <span className="text-[10px] rounded-full bg-pink-600/20 text-pink-400 px-1.5 py-0.5 font-bold">!</span>
+                  <span className="text-xs font-semibold uppercase tracking-wide text-orange-400">Hari Makan Tertinggi</span>
+                  <span className="text-[10px] rounded-full bg-orange-500/20 text-orange-300 px-1.5 py-0.5 font-bold">!</span>
                 </div>
-                <p className="text-lg font-extrabold text-pink-400">{formatCompact(highestMakananDay.total)}</p>
+                <p className="text-lg font-extrabold text-orange-400">{formatCompact(highestMakananDay.total)}</p>
                 <p className="text-[12px] text-slate-400 mt-0.5">
                   {new Date(`${highestMakananDay.date}T00:00:00`).toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "short" })}
                   {" — "}

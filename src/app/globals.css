@@ -293,8 +293,8 @@ html[data-theme="light"] {
     color: #047857 !important;
   }
 
-  /* Premium Palette — Light mode overrides for new card colors */
-  /* Teal: Surplus card */
+  /* Premium Palette — Light mode overrides for finance card colors */
+  /* Teal: Surplus (sebelum invest) card */
   .bg-teal-500\/10,
   .bg-teal-500\/5 {
     background-color: #f0fdfa !important;
@@ -329,25 +329,30 @@ html[data-theme="light"] {
   .text-cyan-700 { color: #0e7490 !important; }
   .text-cyan-800 { color: #155e75 !important; }
 
-  /* Fuchsia: Food (Makanan) category */
-  .bg-fuchsia-500\/10 {
-    background-color: #fdf4ff !important;
+  /* Orange: Makanan (Food) category + Hari Makan Tertinggi */
+  .bg-orange-500\/15 {
+    background-color: #fff7ed !important;
   }
-  .border-fuchsia-500\/30 {
-    border-color: #f0abfc !important;
+  .bg-orange-500\/10 {
+    background-color: #fff7ed !important;
   }
-  .text-fuchsia-400 { color: #c026d3 !important; }
+  .border-orange-500\/40,
+  .border-orange-500\/30 {
+    border-color: #fdba74 !important;
+  }
+  .text-orange-400 { color: #ea580c !important; }
+  .bg-orange-500\/20 { background-color: #ffedd5 !important; }
+  .text-orange-300 { color: #f97316 !important; }
 
-  /* Pink: Hari Makan Tertinggi highlight */
-  .bg-pink-600\/5 {
-    background-color: #fdf2f8 !important;
+  /* Sky: Transportasi category */
+  .bg-sky-500\/15 {
+    background-color: #f0f9ff !important;
   }
-  .border-pink-600\/20 {
-    border-color: #fbcfe8 !important;
+  .border-sky-400\/40 {
+    border-color: #7dd3fc !important;
   }
-  .text-pink-500 { color: #db2777 !important; }
-  .text-pink-400 { color: #ec4899 !important; }
-  .bg-pink-600\/20 { background-color: #fce7f3 !important; }
+  .text-sky-400 { color: #0284c7 !important; }
+
 
   /* 6. Recharts Styles Overrides */
   .recharts-cartesian-grid-horizontal line,
