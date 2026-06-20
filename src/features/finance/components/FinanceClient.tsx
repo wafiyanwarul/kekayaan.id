@@ -475,28 +475,31 @@ export function FinanceClient({ cycle, initialCategories, initialTransactions, u
         const liquid = trueSurplus - dailyAvgStats.investasi
         return (
           <div className="grid gap-3 sm:grid-cols-3">
-            <div className="rounded-xl border border-indigo-500/30 dark:border-indigo-500/20 bg-indigo-500/10 dark:bg-indigo-500/5 p-4">
-              <p className="text-[11px] font-semibold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">Surplus (sebelum invest)</p>
-              <p className="mt-1 text-2xl font-extrabold text-indigo-700 dark:text-indigo-300 whitespace-nowrap">
+            {/* Surplus — Teal */}
+            <div className="rounded-xl border border-teal-500/25 dark:border-teal-500/20 bg-teal-500/10 dark:bg-teal-500/8 p-4">
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-teal-500 dark:text-teal-200">Surplus (sebelum invest)</p>
+              <p className="mt-1 text-2xl font-extrabold text-teal-600 dark:text-white whitespace-nowrap">
                 <AnimatedCounter value={trueSurplus} formatter="compact" />
               </p>
-              <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Pemasukan − pengeluaran riil</p>
+              <p className="mt-1 text-xs text-teal-600/80 dark:text-teal-300">Pemasukan − pengeluaran riil</p>
             </div>
-            <div className="rounded-xl border border-purple-500/30 dark:border-purple-500/20 bg-purple-500/10 dark:bg-purple-500/5 p-4">
-              <p className="text-[11px] font-semibold uppercase tracking-wider text-purple-600 dark:text-purple-400">Dialokasikan ke Investasi</p>
-              <p className="mt-1 text-2xl font-extrabold text-purple-700 dark:text-purple-300 whitespace-nowrap">
+            {/* Investasi — Rose-Crimson */}
+            <div className="rounded-xl border border-rose-500/25 dark:border-rose-500/20 bg-rose-500/10 dark:bg-rose-500/8 p-4">
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-rose-500 dark:text-rose-200">Dialokasikan ke Investasi</p>
+              <p className="mt-1 text-2xl font-extrabold text-rose-600 dark:text-white whitespace-nowrap">
                 <AnimatedCounter value={dailyAvgStats.investasi} formatter="compact" />
               </p>
-              <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+              <p className="mt-1 text-xs text-rose-600/80 dark:text-rose-300">
                 {activeSummary.income > 0 ? ((dailyAvgStats.investasi / activeSummary.income) * 100).toFixed(1) : 0}% dari pemasukan
               </p>
             </div>
-            <div className="rounded-xl border border-emerald-500/30 dark:border-emerald-500/20 bg-emerald-500/10 dark:bg-emerald-500/5 p-4">
-              <p className="text-[11px] font-semibold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">Kas Likuid (di tangan)</p>
-              <p className={`mt-1 text-2xl font-extrabold whitespace-nowrap ${liquid >= 0 ? "text-emerald-800 dark:text-emerald-300" : "text-rose-700 dark:text-rose-400"}`}>
+            {/* Kas Likuid — Cyan */}
+            <div className="rounded-xl border border-cyan-500/25 dark:border-cyan-500/20 bg-cyan-500/10 dark:bg-cyan-500/8 p-4">
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-cyan-600 dark:text-cyan-200">Kas Likuid (di tangan)</p>
+              <p className={`mt-1 text-2xl font-extrabold whitespace-nowrap ${liquid >= 0 ? "text-cyan-700 dark:text-white" : "text-rose-600 dark:text-rose-300"}`}>
                 <AnimatedCounter value={liquid} formatter="compact" />
               </p>
-              <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Surplus − investasi</p>
+              <p className="mt-1 text-xs text-cyan-600/80 dark:text-cyan-300">Surplus − investasi</p>
             </div>
           </div>
 
@@ -820,11 +823,12 @@ function DailyEssentialCard({
   const items = [
     {
       avg: avgMakanan,
-      borderColor: "border-amber-500/30",
-      color: "bg-amber-500",
-      colorBg: "bg-amber-500/10",
-      colorText: "text-amber-400",
-      colorTextMuted: "text-amber-500/70",
+      // Orange: warm, food/energy-like, travel-inspired coral — not AI
+      borderColor: "border-orange-500/40",
+      color: "bg-orange-500",
+      colorBg: "bg-orange-500/15",
+      colorText: "text-orange-400",
+      colorTextMuted: "text-orange-500/70",
       emoji: "🍽️",
       label: "Makanan",
       pct: makananPct,
@@ -833,9 +837,10 @@ function DailyEssentialCard({
     },
     {
       avg: avgTransportasi,
-      borderColor: "border-sky-500/30",
+      // Sky blue: premium travel/motion inspired — not flat corporate blue
+      borderColor: "border-sky-400/40",
       color: "bg-sky-500",
-      colorBg: "bg-sky-500/10",
+      colorBg: "bg-sky-500/15",
       colorText: "text-sky-400",
       colorTextMuted: "text-sky-500/70",
       emoji: "🚌",
@@ -869,7 +874,7 @@ function DailyEssentialCard({
           {/* Segmented progress bar */}
           <div className="mb-1 flex h-3 overflow-hidden rounded-full bg-[#0f1117]">
             <div
-              className="h-full bg-amber-500 transition-all duration-500"
+              className="h-full bg-orange-500 transition-all duration-500"
               style={{ width: `${makananPct}%` }}
             />
             <div
@@ -936,12 +941,12 @@ function DailyEssentialCard({
             </div>
 
             {highestMakananDay && (
-              <div className="rounded-xl border border-rose-500/20 bg-rose-500/5 px-4 py-3">
+              <div className="rounded-xl border border-orange-500/30 bg-orange-500/10 px-4 py-3">
                 <div className="flex items-center gap-1.5 mb-1">
-                  <span className="text-xs font-semibold uppercase tracking-wide text-rose-400">Hari Makan Tertinggi</span>
-                  <span className="text-[10px] rounded-full bg-rose-500/20 text-rose-300 px-1.5 py-0.5 font-bold">!</span>
+                  <span className="text-xs font-semibold uppercase tracking-wide text-orange-400">Hari Makan Tertinggi</span>
+                  <span className="text-[10px] rounded-full bg-orange-500/20 text-orange-300 px-1.5 py-0.5 font-bold">!</span>
                 </div>
-                <p className="text-lg font-extrabold text-rose-300">{formatCompact(highestMakananDay.total)}</p>
+                <p className="text-lg font-extrabold text-orange-400">{formatCompact(highestMakananDay.total)}</p>
                 <p className="text-[12px] text-slate-400 mt-0.5">
                   {new Date(`${highestMakananDay.date}T00:00:00`).toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "short" })}
                   {" — "}

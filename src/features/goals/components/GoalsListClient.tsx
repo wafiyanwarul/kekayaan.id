@@ -195,7 +195,7 @@ export function GoalsListClient({ initialGoals, userId, averageSurplus }: Props)
             label: "Progres Kumulatif",
             value: <AnimatedCounter value={overallProgress} formatter={(v) => `${v.toFixed(1)}%`} />,
             sub: "Dari seluruh target",
-            color: "text-purple-400",
+            color: "text-teal-400",
             icon: Percent,
           },
         ].map(s => {
@@ -400,8 +400,8 @@ export function GoalsListClient({ initialGoals, userId, averageSurplus }: Props)
                       <div
                         className={`h-full rounded-full transition-all duration-500 ${
                           isCompleted
-                            ? "bg-gradient-to-r from-emerald-500 to-teal-400"
-                            : "bg-gradient-to-r from-indigo-500 to-purple-500"
+                             ? "bg-gradient-to-r from-emerald-500 to-teal-400"
+                            : "bg-gradient-to-r from-teal-500 to-cyan-500"
                         }`}
                         style={{ width: `${progress}%` }}
                       />
