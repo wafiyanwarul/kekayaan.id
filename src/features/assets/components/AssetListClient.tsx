@@ -84,9 +84,9 @@ export function AssetListClient({ initialAssets, userId }: Props) {
                     {asset.notes && <p className="text-xs text-slate-500 mt-0.5 italic">{asset.notes}</p>}
                   </div>
                 </div>
-                <div className="flex items-center gap-3">
-                  <span className="text-sm font-bold text-white">{formatRupiah(Number(asset.current_value))}</span>
-                  <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition">
+                <div className="flex flex-col sm:flex-row items-end sm:items-center gap-2 sm:gap-3 flex-shrink-0">
+                  <span className="text-sm font-bold text-white whitespace-nowrap">{formatRupiah(Number(asset.current_value))}</span>
+                  <div className="flex gap-1.5 opacity-100 transition sm:opacity-0 sm:group-hover:opacity-100">
                     <button onClick={() => { setEditingAsset(asset); setShowModal(true) }}
                       className="px-2.5 py-1 text-xs bg-indigo-500/20 hover:bg-indigo-500/40 text-indigo-300 rounded-md transition cursor-pointer">
                       Edit
